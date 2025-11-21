@@ -1,0 +1,5 @@
+{
+  "name": "Logistics Email-to-File",
+  "description": "Efficiently parses shipment emails into standardized Word, Excel, and PDF documents.",
+  "requestFramePermissions": []
+}
