@@ -383,18 +383,18 @@ export const ExtractionResult: React.FC<ExtractionResultProps> = ({
                   <h3 className="text-sm font-semibold text-blue-900">Send to Pricing Team</h3>
                 </div>
                 <p className="text-xs text-blue-700 mb-4">
-                  Review and edit the information above, then enter the pricing team's email address below.
+                  Review and edit the information above, then enter the pricing team's email address below (or leave empty to use default).
                 </p>
                 <div className="space-y-3">
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-2">
-                      Pricing Team Email <span className="text-red-500">*</span>
+                      Pricing Team Email <span className="text-slate-400 text-xs">(optional - uses default if empty)</span>
                     </label>
                     <input
                       type="email"
                       value={pricingEmail}
                       onChange={(e) => onPricingEmailChange?.(e.target.value)}
-                      placeholder="pricing@example.com"
+                      placeholder="Leave empty to use default pricing email"
                       className="w-full bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none"
                       disabled={sendingEmail}
                     />
@@ -402,9 +402,9 @@ export const ExtractionResult: React.FC<ExtractionResultProps> = ({
                   <div className="flex items-center gap-3">
                     <button
                       onClick={onSendToPricing}
-                      disabled={!isCustomerNameValid || !pricingEmail.trim() || sendingEmail}
+                      disabled={!isCustomerNameValid || sendingEmail}
                       className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold shadow-sm transition-all ${
-                        isCustomerNameValid && pricingEmail.trim() && !sendingEmail
+                        isCustomerNameValid && !sendingEmail
                           ? 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow'
                           : 'bg-slate-300 text-slate-500 cursor-not-allowed'
                       }`}

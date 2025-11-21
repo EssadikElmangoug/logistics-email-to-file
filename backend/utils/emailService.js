@@ -5,14 +5,24 @@ const createTransporter = () => {
   // For Gmail, you can use OAuth2 or App Password
   // For other services, adjust accordingly
   
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+
+  if (!smtpUser || !smtpPass) {
+    throw new Error('SMTP_USER and SMTP_PASS must be set in environment variables');
+  }
+
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: parseInt(process.env.SMTP_PORT || '587'),
     secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
     auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
+      user: smtpUser,
+      pass: smtpPass,
     },
+    // Add debug option
+    debug: process.env.NODE_ENV === 'development',
+    logger: process.env.NODE_ENV === 'development',
   });
 
   return transporter;
@@ -20,7 +30,25 @@ const createTransporter = () => {
 
 export const sendEmailWithPDF = async (toEmail, pdfBuffer, customerName) => {
   try {
+    // Verify email configuration
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      throw new Error('Email configuration is missing. Please set SMTP_USER and SMTP_PASS in your .env file.');
+    }
+
+    // Log configuration (without password) for debugging
+    console.log('Email config check:', {
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: process.env.SMTP_PORT || '587',
+      user: process.env.SMTP_USER,
+      passLength: process.env.SMTP_PASS ? process.env.SMTP_PASS.length : 0,
+    });
+
     const transporter = createTransporter();
+    
+    // Verify connection before sending
+    console.log('Verifying email connection...');
+    await transporter.verify();
+    console.log('Email connection verified successfully');
 
     const date = new Date().toISOString().split('T')[0];
     const time = new Date().toTimeString().split(' ')[0].replace(/:/g, '-');
@@ -53,6 +81,19 @@ export const sendEmailWithPDF = async (toEmail, pdfBuffer, customerName) => {
     return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error('Email sending error:', error);
+    
+    // Provide more helpful error messages
+    if (error.code === 'EAUTH') {
+      throw new Error(
+        'Email authentication failed. Please check:\n' +
+        '1. SMTP_USER is your full Gmail address (e.g., yourname@gmail.com)\n' +
+        '2. SMTP_PASS is a 16-character App Password (not your regular password)\n' +
+        '3. 2-Step Verification is enabled on your Google account\n' +
+        '4. App Password was generated correctly (Settings > Security > App passwords)\n' +
+        `Current SMTP_USER: ${process.env.SMTP_USER ? 'Set' : 'NOT SET'}`
+      );
+    }
+    
     throw new Error(`Failed to send email: ${error.message}`);
   }
 };

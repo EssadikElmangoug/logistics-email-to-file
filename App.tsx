@@ -144,8 +144,8 @@ const App: React.FC = () => {
   };
 
   const handleSendToPricing = async () => {
-    if (!data || !pricingEmail.trim()) {
-      setError('Please enter a valid email address');
+    if (!data) {
+      setError('No shipment data available');
       return;
     }
 
@@ -153,7 +153,8 @@ const App: React.FC = () => {
     setError(null);
 
     try {
-      await emailAPI.sendToPricing(pricingEmail.trim(), data);
+      // Send email (pricingEmail can be empty to use default from env)
+      await emailAPI.sendToPricing(pricingEmail.trim() || undefined, data);
       // Save submission
       await saveSubmission('pdf');
       // Show success message
@@ -272,6 +273,12 @@ const App: React.FC = () => {
               onDownloadPDF={handleDownloadPDF}
               onReset={handleReset}
               onUpdate={handleUpdateData}
+              onSendToPricingClick={handleSendToPricingClick}
+              onSendToPricing={handleSendToPricing}
+              sendToPricingMode={sendToPricingMode}
+              pricingEmail={pricingEmail}
+              onPricingEmailChange={setPricingEmail}
+              sendingEmail={sendingEmail}
             />
           )
         )}

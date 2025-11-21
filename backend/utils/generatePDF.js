@@ -1,5 +1,8 @@
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import { jsPDF } from 'jspdf';
+import autoTablePkg from 'jspdf-autotable';
+
+// Handle default export for jspdf-autotable
+const autoTable = (autoTablePkg.default || autoTablePkg);
 
 export const generatePDFBuffer = (data) => {
   const doc = new jsPDF();

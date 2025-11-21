@@ -1,5 +1,9 @@
 version: '3.8'
 
+# Example docker-compose file
+# Copy this to docker-compose.yml and update with your values
+# Or set environment variables before running docker-compose
+
 services:
   mongodb:
     image: mongo:7.0
@@ -27,18 +31,19 @@ services:
     restart: unless-stopped
     ports:
       - "5000:5000"
-    env_file:
-      - ./backend/.env
     environment:
       - NODE_ENV=production
       - PORT=5000
       - MONGODB_URI=mongodb://mongodb:27017/logistics
-      # Optional: Set CREATE_ADMIN=true to auto-create admin on first startup
-      - CREATE_ADMIN=${CREATE_ADMIN:-false}
-      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
-      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@logistics.com}
-      # All other variables will be loaded from backend/.env via env_file
+      - JWT_SECRET=${JWT_SECRET:-change-this-secret-key-in-production}
+      - JWT_EXPIRE=${JWT_EXPIRE:-7d}
+      - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_SECURE=${SMTP_SECURE:-false}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - SMTP_FROM=${SMTP_FROM:-${SMTP_USER}}
+      - PRICING_EMAIL=${PRICING_EMAIL}
     depends_on:
       mongodb:
         condition: service_healthy

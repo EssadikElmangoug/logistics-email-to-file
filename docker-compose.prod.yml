@@ -38,7 +38,6 @@ services:
       - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
       - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@logistics.com}
-      # All other variables will be loaded from backend/.env via env_file
     depends_on:
       mongodb:
         condition: service_healthy

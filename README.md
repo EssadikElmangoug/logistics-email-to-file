@@ -50,6 +50,20 @@ Efficiently parses shipment emails into standardized Word, Excel, and PDF docume
    JWT_SECRET=your-super-secret-jwt-key-change-this
    ```
 
+   **Important:** You also need to set the `GEMINI_API_KEY` environment variable for the frontend build. You can either:
+   
+   - Create a `.env` file in the root directory with:
+     ```env
+     GEMINI_API_KEY=your-gemini-api-key-here
+     VITE_API_URL=http://localhost:5000/api
+     ```
+   
+   - Or export it before running docker-compose:
+     ```bash
+     export GEMINI_API_KEY=your-gemini-api-key-here
+     docker-compose up --build -d
+     ```
+   
    Create a `backend/.env` file:
    ```env
    PORT=5000
@@ -65,17 +79,63 @@ Efficiently parses shipment emails into standardized Word, Excel, and PDF docume
    SMTP_USER=your-email@gmail.com
    SMTP_PASS=your-app-password
    SMTP_FROM=your-email@gmail.com
+   PRICING_EMAIL=pricing@example.com
    ```
+   
+   **Important for Docker:** The `backend/.env` file will be automatically loaded by docker-compose. Make sure `PRICING_EMAIL` is set in this file.
    
    **Note:** For Docker, use `mongodb://mongodb:27017/logistics`. For local development, use `mongodb://localhost:27017/logistics`.
    
-   **Email Setup:**
-   - For Gmail: Use an App Password (not your regular password). Enable 2FA and generate an App Password in your Google Account settings.
-   - For other email providers: Adjust SMTP_HOST, SMTP_PORT, and SMTP_SECURE accordingly.
+   **Email Setup (Gmail):**
+   1. Enable 2-Step Verification on your Google Account
+   2. Go to Google Account Settings > Security > 2-Step Verification
+   3. Scroll down to "App passwords"
+   4. Generate a new app password (select "Mail" and "Other" device)
+   5. Copy the 16-character password (no spaces)
+   6. In your `.env` file:
+      ```env
+      SMTP_USER=your-email@gmail.com
+      SMTP_PASS=your-16-char-app-password
+      ```
+   **Important:** Use the full email address for SMTP_USER and the 16-character app password (not your regular password).
+   
+   For other email providers: Adjust SMTP_HOST, SMTP_PORT, and SMTP_SECURE accordingly.
 
-3. **Build and run with Docker Compose**
+3. **Set up backend environment file**
+   
+   Create `backend/.env` file with all required variables:
+   ```env
+   PORT=5000
+   MONGODB_URI=mongodb://mongodb:27017/logistics
+   JWT_SECRET=your-super-secret-jwt-key-change-this
+   JWT_EXPIRE=7d
+   NODE_ENV=production
+   
+   # Email Configuration
+   SMTP_HOST=smtp.gmail.com
+   SMTP_PORT=587
+   SMTP_SECURE=false
+   SMTP_USER=your-email@gmail.com
+   SMTP_PASS=your-16-char-app-password
+   SMTP_FROM=your-email@gmail.com
+   PRICING_EMAIL=pricing@example.com
+   ```
+
+4. **Build and run with Docker Compose**
+   
+   **Run in foreground (see logs):**
    ```bash
    docker-compose up --build
+   ```
+   
+   **Run in background (detached mode):**
+   ```bash
+   docker-compose up --build -d
+   ```
+   
+   **Or for production:**
+   ```bash
+   docker-compose -f docker-compose.prod.yml up --build -d
    ```
 
    This will:
@@ -161,7 +221,30 @@ Efficiently parses shipment emails into standardized Word, Excel, and PDF docume
 
 ## Creating Admin User
 
-To create an admin user, run the following command from the `backend` directory:
+### Option 1: Automatic (Docker only)
+
+When using Docker, you can automatically create an admin user on first startup by setting environment variables:
+
+```bash
+# In docker-compose.yml or as environment variables
+CREATE_ADMIN=true
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=admin123
+ADMIN_EMAIL=admin@logistics.com
+```
+
+Or add to your `docker-compose.yml`:
+```yaml
+environment:
+  - CREATE_ADMIN=true
+  - ADMIN_USERNAME=myadmin
+  - ADMIN_PASSWORD=securepassword123
+  - ADMIN_EMAIL=admin@example.com
+```
+
+### Option 2: Manual (Local Development)
+
+To create an admin user manually, run the following command from the `backend` directory:
 
 ```bash
 cd backend
@@ -184,6 +267,18 @@ npm run create-admin myadmin securepass123 admin@mycompany.com
 ```
 
 **Important:** Save the credentials securely. The password is hashed in the database and cannot be retrieved later.
+
+### Option 3: Manual (Docker Container)
+
+To create an admin user in a running Docker container:
+
+```bash
+# Execute the create-admin script inside the container
+docker-compose exec backend npm run create-admin
+
+# Or with custom credentials
+docker-compose exec backend npm run create-admin myadmin securepass123 admin@example.com
+```
 
 ## API Endpoints
 
@@ -226,24 +321,57 @@ npm run create-admin myadmin securepass123 admin@mycompany.com
 
 ## Docker Commands
 
+### Development
 ```bash
-# Build and start all services
+# Build and start all services (foreground - see logs)
 docker-compose up --build
 
-# Start in detached mode
+# Build and start in background (detached mode)
+docker-compose up --build -d
+
+# Start existing containers in background
 docker-compose up -d
 
-# Stop all services
-docker-compose down
-
-# View logs
+# View logs (all services)
 docker-compose logs -f
+
+# View logs for specific service
+docker-compose logs -f backend
+docker-compose logs -f frontend
+docker-compose logs -f mongodb
 
 # Rebuild specific service
 docker-compose up --build backend
+```
+
+### Production
+```bash
+# Build and start in production mode
+docker-compose -f docker-compose.prod.yml up --build -d
+
+# View logs
+docker-compose -f docker-compose.prod.yml logs -f
+
+# Stop production services
+docker-compose -f docker-compose.prod.yml down
+
+# Rebuild and restart
+docker-compose -f docker-compose.prod.yml up --build -d --force-recreate
+```
+
+### General
+```bash
+# Stop all services
+docker-compose down
 
 # Remove volumes (clean MongoDB data)
 docker-compose down -v
+
+# View container status
+docker-compose ps
+
+# Execute command in container
+docker-compose exec backend npm run create-admin
 ```
 
 ## Project Structure
