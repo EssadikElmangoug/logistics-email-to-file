@@ -27,6 +27,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
   const [newUserCredentials, setNewUserCredentials] = useState<CreateUserResponse | null>(null);
   const [copiedUserId, setCopiedUserId] = useState<string | null>(null);
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
+  const [viewingUserSubmissions, setViewingUserSubmissions] = useState<string | null>(null);
+  const [userSubmissions, setUserSubmissions] = useState<Submission[]>([]);
+  const [loadingUserSubmissions, setLoadingUserSubmissions] = useState(false);
 
   useEffect(() => {
     loadUsers();
@@ -35,9 +38,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
 
   useEffect(() => {
     if (activeTab === 'submissions') {
-      loadSubmissions();
+      // Reset viewing state when switching to submissions tab
+      setViewingUserSubmissions(null);
+      setUserSubmissions([]);
     }
-  }, [activeTab, selectedUserId]);
+  }, [activeTab]);
 
   const loadUsers = async () => {
     try {
@@ -63,6 +68,29 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
     } finally {
       setSubmissionsLoading(false);
     }
+  };
+
+  const loadUserSubmissions = async (userId: string | null) => {
+    if (!userId) {
+      setError('Invalid user ID');
+      return;
+    }
+    try {
+      setLoadingUserSubmissions(true);
+      setError(null);
+      const data = await adminAPI.getSubmissions(userId);
+      setUserSubmissions(data);
+      setViewingUserSubmissions(userId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load user submissions');
+    } finally {
+      setLoadingUserSubmissions(false);
+    }
+  };
+
+  const closeUserSubmissions = () => {
+    setViewingUserSubmissions(null);
+    setUserSubmissions([]);
   };
 
   const loadSubmissionStats = async () => {
@@ -636,117 +664,200 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
                 </div>
               )}
 
-              {/* Filter Bar */}
-              <div className="mb-6 flex justify-between items-center">
-                <div>
-                  <h3 className="text-lg font-semibold text-slate-900">
-                    Submissions ({submissions.length})
-                  </h3>
-                  <p className="text-sm text-slate-500 mt-1">View all user submissions</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Filter className="w-4 h-4 text-slate-400" />
-                  <select
-                    value={selectedUserId || ''}
-                    onChange={(e) => setSelectedUserId(e.target.value || null)}
-                    className="px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
-                  >
-                    <option value="">All Users</option>
-                    {users.map((user) => (
-                      <option key={user._id} value={user._id}>
-                        {user.username}
-                        {submissionStats?.submissionsByUser.find(s => s.userId === user._id) && (
-                          ` (${submissionStats.submissionsByUser.find(s => s.userId === user._id)?.count})`
-                        )}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              {/* Header */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-slate-900">
+                  Submissions by User
+                </h3>
+                <p className="text-sm text-slate-500 mt-1">View submissions grouped by user</p>
               </div>
 
-              {/* Submissions Table */}
-              {submissionsLoading ? (
-                <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="mt-4 text-slate-600">Loading submissions...</p>
-                </div>
-              ) : submissions.length === 0 ? (
+              {/* Users with Submissions */}
+              {submissionStats && submissionStats.submissionsByUser.length === 0 ? (
                 <div className="text-center py-12 bg-slate-50 rounded-lg border border-slate-200">
                   <FileText className="w-12 h-12 text-slate-400 mx-auto mb-4" />
                   <p className="text-slate-600 font-medium">No submissions found</p>
-                  <p className="text-sm text-slate-500 mt-1">
-                    {selectedUserId ? 'This user has no submissions yet' : 'No submissions have been created yet'}
-                  </p>
+                  <p className="text-sm text-slate-500 mt-1">No submissions have been created yet</p>
                 </div>
               ) : (
-                <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-slate-50 border-b border-slate-200">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">User</th>
-                          <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Customer</th>
-                          <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Route</th>
-                          <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Service Type</th>
-                          <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">File Type</th>
-                          <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Date</th>
-                          <th className="px-6 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-200">
-                        {submissions.map((submission) => (
-                          <tr key={submission._id} className="hover:bg-slate-50 transition-colors">
-                            <td className="px-6 py-4 whitespace-nowrap">
+                <div className="space-y-3">
+                  {submissionStats?.submissionsByUser.map((userStat) => {
+                    const user = users.find(u => u._id === userStat.userId);
+                    const isDeletedUser = userStat.username === '[Deleted User]';
+                    
+                    return (
+                      <div
+                        key={userStat.userId || 'deleted'}
+                        className="bg-white border border-slate-200 rounded-lg p-5 hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4 flex-1">
+                            <div className={`p-3 rounded-lg ${
+                              isDeletedUser 
+                                ? 'bg-slate-100' 
+                                : 'bg-blue-100'
+                            }`}>
+                              <UserIcon className={`w-5 h-5 ${
+                                isDeletedUser 
+                                  ? 'text-slate-400' 
+                                  : 'text-blue-600'
+                              }`} />
+                            </div>
+                            <div className="flex-1">
                               <div className="flex items-center gap-2">
-                                <UserIcon className="w-4 h-4 text-slate-400" />
-                                <span className="text-sm font-medium text-slate-900">{submission.user.username}</span>
+                                <h4 className={`text-base font-semibold ${
+                                  isDeletedUser 
+                                    ? 'text-slate-400 italic' 
+                                    : 'text-slate-900'
+                                }`}>
+                                  {userStat.username}
+                                </h4>
+                                {user && user.role === 'admin' && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">
+                                    <Shield className="w-3 h-3" />
+                                    Admin
+                                  </span>
+                                )}
                               </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="text-sm text-slate-900 font-medium">{submission.customerName}</span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="text-sm">
-                                <div className="text-slate-900">
-                                  {submission.shipper.city}, {submission.shipper.stateOrProvince}
-                                </div>
-                                <div className="text-slate-500 text-xs">
-                                  → {submission.receiver.city}, {submission.receiver.stateOrProvince}
-                                </div>
+                              {user && user.email && (
+                                <p className="text-sm text-slate-500 mt-0.5">{user.email}</p>
+                              )}
+                              <div className="flex items-center gap-4 mt-2">
+                                <span className="text-sm text-slate-600">
+                                  <span className="font-semibold text-blue-600">{userStat.count}</span> submission{userStat.count !== 1 ? 's' : ''}
+                                </span>
                               </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="text-sm text-slate-600">{submission.details.serviceType}</span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`
-                                inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold
-                                ${submission.fileType === 'word' 
-                                  ? 'bg-blue-100 text-blue-700'
-                                  : submission.fileType === 'excel'
-                                  ? 'bg-emerald-100 text-emerald-700'
-                                  : 'bg-red-100 text-red-700'}
-                              `}>
-                                {submission.fileType.toUpperCase()}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="text-sm text-slate-500">{formatDate(submission.createdAt)}</span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right">
-                              <button
-                                onClick={() => setSelectedSubmission(submission)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
-                                title="View details"
-                              >
-                                <Eye className="w-4 h-4" />
-                                View
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => userStat.userId && loadUserSubmissions(userStat.userId)}
+                            disabled={!userStat.userId}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold shadow-sm hover:shadow transition-all ${
+                              userStat.userId
+                                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                                : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                            }`}
+                          >
+                            <Eye className="w-4 h-4" />
+                            See Submissions
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* User Submissions Modal */}
+              {viewingUserSubmissions && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                  <div className="bg-white rounded-xl shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+                    {/* Modal Header */}
+                    <div className="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center">
+                      <div>
+                        <h3 className="text-lg font-bold text-slate-900">
+                          {submissionStats?.submissionsByUser.find(s => s.userId === viewingUserSubmissions)?.username || 'User'} Submissions
+                        </h3>
+                        <p className="text-sm text-slate-500 mt-1">
+                          {userSubmissions.length} submission{userSubmissions.length !== 1 ? 's' : ''}
+                        </p>
+                      </div>
+                      <button
+                        onClick={closeUserSubmissions}
+                        className="text-slate-400 hover:text-slate-600 transition-colors"
+                      >
+                        <X className="w-6 h-6" />
+                      </button>
+                    </div>
+
+                    {/* Modal Content */}
+                    <div className="flex-1 overflow-y-auto p-6">
+                      {loadingUserSubmissions ? (
+                        <div className="text-center py-12">
+                          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                          <p className="mt-4 text-slate-600">Loading submissions...</p>
+                        </div>
+                      ) : userSubmissions.length === 0 ? (
+                        <div className="text-center py-12 bg-slate-50 rounded-lg border border-slate-200">
+                          <FileText className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+                          <p className="text-slate-600 font-medium">No submissions found</p>
+                        </div>
+                      ) : (
+                        <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+                          <div className="overflow-x-auto">
+                            <table className="w-full">
+                              <thead className="bg-slate-50 border-b border-slate-200">
+                                <tr>
+                                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Customer</th>
+                                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Route</th>
+                                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Service Type</th>
+                                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">File Type</th>
+                                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Date</th>
+                                  <th className="px-6 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-200">
+                                {userSubmissions.map((submission) => (
+                                  <tr key={submission._id} className="hover:bg-slate-50 transition-colors">
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                      <span className="text-sm text-slate-900 font-medium">{submission.customerName}</span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                      <div className="text-sm">
+                                        <div className="text-slate-900">
+                                          {submission.shipper.city}, {submission.shipper.stateOrProvince}
+                                        </div>
+                                        <div className="text-slate-500 text-xs">
+                                          → {submission.receiver.city}, {submission.receiver.stateOrProvince}
+                                        </div>
+                                      </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                      <span className="text-sm text-slate-600">{submission.details.serviceType}</span>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                      <span className={`
+                                        inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold
+                                        ${submission.fileType === 'word' 
+                                          ? 'bg-blue-100 text-blue-700'
+                                          : submission.fileType === 'excel'
+                                          ? 'bg-emerald-100 text-emerald-700'
+                                          : 'bg-red-100 text-red-700'}
+                                      `}>
+                                        {submission.fileType.toUpperCase()}
+                                      </span>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                      <span className="text-sm text-slate-500">{formatDate(submission.createdAt)}</span>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                                      <button
+                                        onClick={() => setSelectedSubmission(submission)}
+                                        className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                                        title="View details"
+                                      >
+                                        <Eye className="w-4 h-4" />
+                                        View
+                                      </button>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Modal Footer */}
+                    <div className="bg-slate-50 border-t border-slate-200 px-6 py-4 flex justify-end">
+                      <button
+                        onClick={closeUserSubmissions}
+                        className="px-5 py-2.5 bg-slate-600 text-white rounded-lg font-semibold hover:bg-slate-700 transition-colors"
+                      >
+                        Close
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -779,7 +890,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
                       <UserIcon className="w-4 h-4 text-slate-500" />
                       <span className="text-sm font-semibold text-slate-600">Created By</span>
                     </div>
-                    <p className="text-base font-medium text-slate-900">{selectedSubmission.user.username}</p>
+                    <p className={`text-base font-medium ${
+                      selectedSubmission.user.username === '[Deleted User]' 
+                        ? 'text-slate-400 italic' 
+                        : 'text-slate-900'
+                    }`}>
+                      {selectedSubmission.user.username}
+                    </p>
                     {selectedSubmission.user.email && (
                       <p className="text-sm text-slate-500">{selectedSubmission.user.email}</p>
                     )}

@@ -168,9 +168,9 @@ export const adminAPI = {
 export interface Submission {
   _id: string;
   user: {
-    _id: string;
+    _id: string | null;
     username: string;
-    email?: string;
+    email?: string | null;
   };
   customerName: string;
   shipper: {
@@ -204,9 +204,9 @@ export interface Submission {
 export interface SubmissionStats {
   totalSubmissions: number;
   submissionsByUser: Array<{
-    userId: string;
+    userId: string | null;
     username: string;
-    email?: string;
+    email?: string | null;
     count: number;
   }>;
 }

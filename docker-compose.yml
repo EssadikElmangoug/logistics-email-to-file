@@ -56,7 +56,8 @@ services:
       context: .
       dockerfile: Dockerfile.frontend
       args:
-        - VITE_API_URL=${VITE_API_URL:-http://localhost:5000/api}
+        # In development, use relative URL since nginx proxies /api to backend
+        - VITE_API_URL=${VITE_API_URL:-/api}
         - GEMINI_API_KEY=${GEMINI_API_KEY}
     container_name: logistics-frontend
     restart: unless-stopped

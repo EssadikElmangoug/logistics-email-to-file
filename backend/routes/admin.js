@@ -175,9 +175,20 @@ router.get('/submissions', async (req, res) => {
     
     const submissions = await Submission.find(query)
       .populate('user', 'username email')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
     
-    res.json(submissions);
+    // Handle deleted users by providing default values
+    const submissionsWithUser = submissions.map(submission => ({
+      ...submission,
+      user: submission.user || {
+        _id: null,
+        username: '[Deleted User]',
+        email: null,
+      },
+    }));
+    
+    res.json(submissionsWithUser);
   } catch (error) {
     console.error('Get submissions error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -206,13 +217,22 @@ router.get('/submissions/stats', async (req, res) => {
         },
       },
       {
-        $unwind: '$user',
-      },
-      {
         $project: {
           userId: '$_id',
-          username: '$user.username',
-          email: '$user.email',
+          username: {
+            $cond: {
+              if: { $eq: [{ $size: '$user' }, 0] },
+              then: '[Deleted User]',
+              else: { $arrayElemAt: ['$user.username', 0] },
+            },
+          },
+          email: {
+            $cond: {
+              if: { $eq: [{ $size: '$user' }, 0] },
+              then: null,
+              else: { $arrayElemAt: ['$user.email', 0] },
+            },
+          },
           count: 1,
         },
       },
