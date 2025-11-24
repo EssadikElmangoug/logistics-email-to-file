@@ -28,7 +28,7 @@ const createTransporter = () => {
   return transporter;
 };
 
-export const sendEmailWithPDF = async (toEmail, pdfBuffer, customerName) => {
+export const sendEmailWithPDF = async (toEmail, pdfBuffer, options) => {
   try {
     // Verify email configuration
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
@@ -54,10 +54,16 @@ export const sendEmailWithPDF = async (toEmail, pdfBuffer, customerName) => {
     const time = new Date().toTimeString().split(' ')[0].replace(/:/g, '-');
     const filename = `Shipment_Order_${date}_${time}.pdf`;
 
+    // Format subject: Username, Shipper City, province- Receiver city, province — customer name
+    const { username, shipper, receiver, customerName } = options;
+    const shipperLocation = `${shipper.city}, ${shipper.stateOrProvince}`;
+    const receiverLocation = `${receiver.city}, ${receiver.stateOrProvince}`;
+    const subject = `${username}, ${shipperLocation}- ${receiverLocation} — ${customerName}`;
+
     const mailOptions = {
       from: process.env.SMTP_FROM || process.env.SMTP_USER,
       to: toEmail,
-      subject: `Shipment Request Order - ${customerName}`,
+      subject: subject,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #2563eb;">Shipment Request Order</h2>

@@ -100,7 +100,13 @@ router.post(
       const pdfBuffer = generatePDFBuffer(shipmentData);
 
       // Send email with PDF attachment
-      const result = await sendEmailWithPDF(pricingEmail, pdfBuffer, shipmentData.customerName);
+      // Format subject: Username, Shipper City, province- Receiver city, province — customer name
+      const result = await sendEmailWithPDF(pricingEmail, pdfBuffer, {
+        username: req.user.username,
+        shipper: shipmentData.shipper,
+        receiver: shipmentData.receiver,
+        customerName: shipmentData.customerName,
+      });
 
       res.json({
         success: true,
