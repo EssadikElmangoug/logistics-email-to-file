@@ -9,7 +9,7 @@ import { generateAndDownloadExcel } from './services/excelService';
 import { generateAndDownloadPDF } from './services/pdfService';
 import { authAPI, submissionAPI, emailAPI } from './services/apiService';
 import { AppStatus, ShipmentData } from './types';
-import { Container, LogOut, Shield } from 'lucide-react';
+import { LogOut, Shield } from 'lucide-react';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -192,14 +192,12 @@ const App: React.FC = () => {
       {/* Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-blue-600 p-1.5 rounded-md">
-              <Container className="w-6 h-6 text-white" />
-            </div>
-            <div className="flex flex-col">
-              <h1 className="text-lg font-bold tracking-tight text-slate-900 leading-none">Logistics Email-to-File</h1>
-              <span className="text-xs text-slate-500 font-medium">Automated Documentation Tool</span>
-            </div>
+          <div className="flex items-center">
+            <img 
+              src="/logo.jpeg" 
+              alt="Highlight Motor Group" 
+              className="h-12 w-auto object-contain"
+            />
           </div>
           <div className="flex items-center gap-4">
             {currentUser && (

@@ -12,6 +12,9 @@ COPY package*.json ./
 # Install dependencies
 RUN npm ci && npm cache clean --force
 
+# Copy public assets (logo, etc.) first for better layer caching
+COPY public ./public
+
 # Copy frontend source code
 COPY . .
 
@@ -32,7 +35,7 @@ FROM nginx:alpine
 # Install wget for health checks
 RUN apk add --no-cache wget
 
-# Copy built files to nginx
+# Copy built files to nginx (includes logo.jpeg from public folder)
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Copy nginx configuration
