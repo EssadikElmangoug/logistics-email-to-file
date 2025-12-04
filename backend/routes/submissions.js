@@ -62,5 +62,48 @@ router.get('/', protect, async (req, res) => {
   }
 });
 
+// @route   PUT /api/submissions/:id
+// @desc    Update a submission (user can update their own, admin can update any)
+// @access  Private
+router.put('/:id', protect, async (req, res) => {
+  try {
+    const submission = await Submission.findById(req.params.id);
+
+    if (!submission) {
+      return res.status(404).json({ message: 'Submission not found' });
+    }
+
+    // Check if user owns this submission or is an admin
+    if (submission.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Not authorized to update this submission' });
+    }
+
+    // Update fields
+    const allowedUpdates = {
+      postSubmission: req.body.postSubmission,
+    };
+
+    // Only allow updating postSubmission fields
+    if (allowedUpdates.postSubmission) {
+      submission.postSubmission = {
+        ...submission.postSubmission,
+        ...allowedUpdates.postSubmission,
+      };
+    }
+
+    await submission.save();
+
+    const updatedSubmission = await Submission.findById(req.params.id).populate('user', 'username email');
+
+    res.json({
+      message: 'Submission updated successfully',
+      submission: updatedSubmission,
+    });
+  } catch (error) {
+    console.error('Update submission error:', error);
+    res.status(500).json({ message: 'Server error during submission update' });
+  }
+});
+
 export default router;
 

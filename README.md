@@ -172,7 +172,7 @@ Efficiently parses shipment emails into standardized Word, Excel, and PDF docume
 4. **Start MongoDB** (if not using Docker)
    ```bash
    # Option 1: Using Docker (recommended for local dev)
-   docker run -d -p 27017:27017 --name mongodb mongo:7.0
+   docker run -d -p 27017:27017 --name mongodb mongo:latest
    
    # Option 2: Install MongoDB locally and start the service
    # macOS: brew services start mongodb-community

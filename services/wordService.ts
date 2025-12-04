@@ -83,6 +83,52 @@ export const generateAndDownloadWord = async (data: ShipmentData) => {
     spacing: { before: 400, after: 200 },
   });
 
+  // Classification Table
+  const classificationTable = new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    rows: [
+      new TableRow({
+        children: [
+          createHeaderCell("SHIPMENT TYPE"),
+          createCell(data.details.shipmentType || "N/A"),
+          createHeaderCell("CROSS BORDER"),
+          createCell(data.details.crossBorderStatus || "N/A"),
+        ],
+      }),
+      new TableRow({
+        children: [
+          createHeaderCell("TIMING"),
+          createCell(data.details.shipmentTiming || "N/A"),
+          createHeaderCell("READY TIME"),
+          createCell(data.details.readyTime || "N/A"),
+        ],
+      }),
+    ],
+  });
+
+  // Commodity Details Table
+  const commodityTable = new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    rows: [
+      new TableRow({
+        children: [
+          createHeaderCell("COMMODITY"),
+          createCell(data.details.commodity || "N/A"),
+          createHeaderCell("EQUIPMENT TYPE"),
+          createCell(data.details.equipmentType || "N/A"),
+        ],
+      }),
+      new TableRow({
+        children: [
+          createHeaderCell("HAZMAT"),
+          createCell(data.details.isHazmat ? "YES" : "NO"),
+          createHeaderCell("UN NUMBER"),
+          createCell(data.details.unNumber || "N/A"),
+        ],
+      }),
+    ],
+  });
+
   const detailsTable = new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
     rows: [
@@ -95,18 +141,11 @@ export const generateAndDownloadWord = async (data: ShipmentData) => {
           createCell(`${data.details.weightLbs} lbs`),
         ],
       }),
-      // Row 2: Hazmat & Reefer
+      // Row 2: Reefer & Appointments
       new TableRow({
         children: [
-          createHeaderCell("HAZMAT"),
-          createCell(data.details.isHazmat ? "YES" : "NO"),
           createHeaderCell("REEFER REQ."),
           createCell(data.details.isReeferRequired ? "YES" : "NO"),
-        ],
-      }),
-      // Row 3: Appointments
-      new TableRow({
-        children: [
           createHeaderCell("APPOINTMENTS"),
           createCell(data.details.appointments || "N/A"),
         ],
@@ -164,6 +203,19 @@ export const generateAndDownloadWord = async (data: ShipmentData) => {
     rows: dimRows,
   });
 
+  // Section headers
+  const classificationHeader = new Paragraph({
+    text: "CLASSIFICATION",
+    heading: docx.HeadingLevel.HEADING_2,
+    spacing: { before: 400, after: 200 },
+  });
+
+  const commodityHeader = new Paragraph({
+    text: "COMMODITY DETAILS",
+    heading: docx.HeadingLevel.HEADING_2,
+    spacing: { before: 400, after: 200 },
+  });
+
   // ASSEMBLE DOCUMENT
   const doc = new Document({
     sections: [
@@ -174,12 +226,19 @@ export const generateAndDownloadWord = async (data: ShipmentData) => {
           customerParagraph,
           routeTable,
           new Paragraph({ text: "" }), // Spacer
+          classificationHeader,
+          classificationTable,
+          new Paragraph({ text: "" }), // Spacer
+          commodityHeader,
+          commodityTable,
+          new Paragraph({ text: "" }), // Spacer
           detailsHeader,
           detailsTable,
           new Paragraph({ text: "" }), // Spacer
-          notesTable,
           dimensionsHeader,
           dimTable,
+          new Paragraph({ text: "" }), // Spacer
+          notesTable,
         ],
       },
     ],

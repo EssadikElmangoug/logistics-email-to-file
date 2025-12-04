@@ -3,13 +3,14 @@ import { Login } from './components/Login';
 import { InputForm } from './components/InputForm';
 import { ExtractionResult } from './components/ExtractionResult';
 import { AdminPanel } from './components/AdminPanel';
+import { MySubmissions } from './components/MySubmissions';
 import { extractShipmentData } from './services/geminiService';
 import { generateAndDownloadWord } from './services/wordService';
 import { generateAndDownloadExcel } from './services/excelService';
 import { generateAndDownloadPDF } from './services/pdfService';
 import { authAPI, submissionAPI, emailAPI } from './services/apiService';
 import { AppStatus, ShipmentData } from './types';
-import { LogOut, Shield } from 'lucide-react';
+import { LogOut, Shield, FileText } from 'lucide-react';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -22,6 +23,7 @@ const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string>('user');
   const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [showMySubmissions, setShowMySubmissions] = useState(false);
   const [sendToPricingMode, setSendToPricingMode] = useState(false);
   const [pricingEmail, setPricingEmail] = useState('');
   const [sendingEmail, setSendingEmail] = useState(false);
@@ -70,6 +72,7 @@ const App: React.FC = () => {
     setCurrentUser(null);
     setUserRole('user');
     setShowAdminPanel(false);
+    setShowMySubmissions(false);
     setStatus(AppStatus.IDLE);
     setData(null);
     setError(null);
@@ -203,9 +206,26 @@ const App: React.FC = () => {
             {currentUser && (
               <span className="text-sm text-slate-600 font-medium">Welcome, {currentUser}</span>
             )}
+            <button
+              onClick={() => {
+                setShowMySubmissions(!showMySubmissions);
+                setShowAdminPanel(false);
+              }}
+              className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                showMySubmissions
+                  ? 'bg-blue-600 text-white'
+                  : 'text-blue-600 hover:text-blue-700 hover:bg-blue-50'
+              }`}
+            >
+              <FileText className="w-4 h-4" />
+              {showMySubmissions ? 'Hide Submissions' : 'My Submissions'}
+            </button>
             {userRole === 'admin' && (
               <button
-                onClick={() => setShowAdminPanel(!showAdminPanel)}
+                onClick={() => {
+                  setShowAdminPanel(!showAdminPanel);
+                  setShowMySubmissions(false);
+                }}
                 className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
                   showAdminPanel
                     ? 'bg-purple-600 text-white'
@@ -232,6 +252,8 @@ const App: React.FC = () => {
         
         {showAdminPanel ? (
           <AdminPanel onBack={() => setShowAdminPanel(false)} />
+        ) : showMySubmissions ? (
+          <MySubmissions onBack={() => setShowMySubmissions(false)} />
         ) : (
           <>
             {status === AppStatus.IDLE && (

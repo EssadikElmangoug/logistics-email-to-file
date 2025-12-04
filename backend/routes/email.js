@@ -23,8 +23,20 @@ router.get('/test', protect, async (req, res) => {
       });
     }
 
+    if (!process.env.SMTP_HOST) {
+      return res.status(400).json({
+        success: false,
+        message: 'SMTP_HOST must be set in environment variables',
+        details: {
+          SMTP_HOST: 'NOT SET',
+          SMTP_USER: process.env.SMTP_USER ? 'Set' : 'NOT SET',
+          SMTP_PASS: process.env.SMTP_PASS ? `Set (${process.env.SMTP_PASS.length} chars)` : 'NOT SET',
+        },
+      });
+    }
+
     const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      host: process.env.SMTP_HOST,
       port: parseInt(process.env.SMTP_PORT || '587'),
       secure: process.env.SMTP_SECURE === 'true',
       auth: {
@@ -39,10 +51,11 @@ router.get('/test', protect, async (req, res) => {
       success: true,
       message: 'Email configuration is valid',
       details: {
-        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        host: process.env.SMTP_HOST,
         port: process.env.SMTP_PORT || '587',
         user: process.env.SMTP_USER,
         passLength: process.env.SMTP_PASS.length,
+        from: process.env.SMTP_FROM || process.env.SMTP_USER,
       },
     });
   } catch (error) {
@@ -55,8 +68,10 @@ router.get('/test', protect, async (req, res) => {
         code: error.code,
         response: error.response,
         troubleshooting: error.code === 'EAUTH' 
-          ? 'Check: 1) SMTP_USER is full email (yourname@gmail.com), 2) SMTP_PASS is 16-char app password (no spaces), 3) 2-Step Verification enabled, 4) App password generated correctly'
-          : 'Check your SMTP configuration',
+          ? (process.env.SMTP_HOST?.includes('office365') || process.env.SMTP_HOST?.includes('outlook')
+              ? 'Check: 1) SMTP_USER is full email (yourname@outlook.com), 2) SMTP_PASS is Microsoft App Password, 3) 2-Step Verification enabled, 4) App password generated in Microsoft Account security settings'
+              : 'Check: 1) SMTP_USER is full email, 2) SMTP_PASS is app password (if 2FA enabled), 3) 2-Step Verification enabled, 4) App password generated correctly')
+          : 'Check your SMTP configuration (host, port, user, password)',
       },
     });
   }

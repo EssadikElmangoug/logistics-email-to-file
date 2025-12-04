@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { adminAPI, User, CreateUserResponse, Submission, SubmissionStats } from '../services/apiService';
-import { Users, Plus, Trash2, Shield, User as UserIcon, Copy, Check, AlertCircle, FileText, BarChart3, Filter, Eye, X, MapPin, Package, Truck, Calendar, Pencil, Download, FileSpreadsheet, FileIcon } from 'lucide-react';
+import { adminAPI, User, CreateUserResponse, Submission, SubmissionStats, submissionAPI, PostSubmissionData } from '../services/apiService';
+import { Users, Plus, Trash2, Shield, User as UserIcon, Copy, Check, AlertCircle, FileText, BarChart3, Filter, Eye, X, MapPin, Package, Truck, Calendar, Pencil, Download, FileSpreadsheet, FileIcon, Building2, Globe2, Box, Clock, AlertTriangle, Edit, Save, DollarSign, MessageSquare } from 'lucide-react';
 import { generateAndDownloadWord } from '../services/wordService';
 import { generateAndDownloadExcel } from '../services/excelService';
 import { generateAndDownloadPDF } from '../services/pdfService';
@@ -30,6 +30,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
   const [viewingUserSubmissions, setViewingUserSubmissions] = useState<string | null>(null);
   const [userSubmissions, setUserSubmissions] = useState<Submission[]>([]);
   const [loadingUserSubmissions, setLoadingUserSubmissions] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editedPostData, setEditedPostData] = useState<PostSubmissionData>({});
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     loadUsers();
@@ -178,6 +181,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
         appointments: submission.details.appointments || '',
         additionalNotes: submission.details.additionalNotes || '',
         serviceType: submission.details.serviceType as ShipmentData['details']['serviceType'],
+        shipmentType: (submission.details.shipmentType as ShipmentData['details']['shipmentType']) || 'Business to Business',
+        crossBorderStatus: (submission.details.crossBorderStatus as ShipmentData['details']['crossBorderStatus']) || 'Interstate',
+        commodity: submission.details.commodity || '',
+        unNumber: submission.details.unNumber || '',
+        equipmentType: submission.details.equipmentType || '',
+        shipmentTiming: (submission.details.shipmentTiming as ShipmentData['details']['shipmentTiming']) || 'Ready Now',
+        readyTime: submission.details.readyTime || '',
       },
     };
   };
@@ -213,6 +223,46 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
       console.error('Failed to download PDF document:', error);
       setError('Failed to download PDF document');
     }
+  };
+
+  const handleViewSubmission = (submission: Submission) => {
+    setSelectedSubmission(submission);
+    setEditMode(false);
+    setEditedPostData(submission.postSubmission || {});
+  };
+
+  const handleEditPostData = () => {
+    setEditMode(true);
+  };
+
+  const handleSavePostData = async () => {
+    if (!selectedSubmission) return;
+
+    try {
+      setSaving(true);
+      setError(null);
+      const result = await submissionAPI.updateSubmission(selectedSubmission._id, editedPostData);
+      
+      // Update the submission in the userSubmissions list
+      setUserSubmissions(prev => prev.map(s => s._id === selectedSubmission._id ? result.submission : s));
+      setSelectedSubmission(result.submission);
+      setEditMode(false);
+      
+      alert('Post-submission data updated successfully!');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update submission');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditMode(false);
+    setEditedPostData(selectedSubmission?.postSubmission || {});
+  };
+
+  const handlePostDataChange = (field: keyof PostSubmissionData, value: string) => {
+    setEditedPostData(prev => ({ ...prev, [field]: value }));
   };
 
   return (
@@ -729,12 +779,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right">
                                       <button
-                                        onClick={() => setSelectedSubmission(submission)}
+                                        onClick={() => handleViewSubmission(submission)}
                                         className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
                                         title="View details"
                                       >
                                         <Eye className="w-4 h-4" />
-                                        View
+                                        View / Edit
                                       </button>
                                     </td>
                                   </tr>
@@ -766,13 +816,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                 {/* Modal Header */}
-                <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center">
+                <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center z-10">
                   <div>
                     <h3 className="text-lg font-bold text-slate-900">Submission Details</h3>
-                    <p className="text-sm text-slate-500 mt-1">View-only mode</p>
+                    <p className="text-sm text-slate-500 mt-1">
+                      {editMode ? 'Edit post-submission data' : 'View and edit submission'}
+                    </p>
                   </div>
                   <button
-                    onClick={() => setSelectedSubmission(null)}
+                    onClick={() => {
+                      setSelectedSubmission(null);
+                      setEditMode(false);
+                    }}
                     className="text-slate-400 hover:text-slate-600 transition-colors"
                   >
                     <X className="w-6 h-6" />
@@ -841,6 +896,70 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
                     </div>
                   </div>
 
+                  {/* Classification */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-3 uppercase flex items-center gap-1">
+                      <Building2 className="w-3 h-3" /> Classification
+                    </label>
+                    <div className="bg-white border border-slate-300 rounded-lg p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-500 mb-1">Shipment Type</label>
+                        <div className="text-sm font-medium text-slate-900">{selectedSubmission.details.shipmentType || 'N/A'}</div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-500 mb-1">Cross Border Status</label>
+                        <div className="text-sm font-medium text-slate-900">{selectedSubmission.details.crossBorderStatus || 'N/A'}</div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1">
+                          <Clock className="w-3 h-3" /> Shipment Timing
+                        </label>
+                        <div className="text-sm font-medium text-slate-900">{selectedSubmission.details.shipmentTiming || 'N/A'}</div>
+                      </div>
+                      {selectedSubmission.details.readyTime && (
+                        <div className="md:col-span-3">
+                          <label className="block text-xs font-semibold text-slate-500 mb-1">Ready Time</label>
+                          <div className="text-sm text-slate-900">{selectedSubmission.details.readyTime}</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Commodity Details */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-3 uppercase flex items-center gap-1">
+                      <Box className="w-3 h-3" /> Commodity Details
+                    </label>
+                    <div className="bg-white border border-slate-300 rounded-lg p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-500 mb-1">Commodity</label>
+                        <div className="text-sm font-medium text-slate-900">{selectedSubmission.details.commodity || 'N/A'}</div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-500 mb-1">Equipment Type</label>
+                        <div className="text-sm font-medium text-slate-900">{selectedSubmission.details.equipmentType || 'N/A'}</div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3" /> Hazmat
+                        </label>
+                        <div className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                          selectedSubmission.details.isHazmat 
+                            ? 'bg-red-100 text-red-700' 
+                            : 'bg-emerald-100 text-emerald-700'
+                        }`}>
+                          {selectedSubmission.details.isHazmat ? 'YES' : 'NO'}
+                        </div>
+                      </div>
+                      {selectedSubmission.details.isHazmat && (
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-500 mb-1">UN Number</label>
+                          <div className="text-sm font-medium text-slate-900">{selectedSubmission.details.unNumber || 'N/A'}</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Shipment Details */}
                   <div>
                     <label className="block text-xs font-semibold text-slate-500 mb-3 uppercase flex items-center gap-1">
@@ -858,16 +977,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
                         <div className="text-sm font-medium text-slate-900">{selectedSubmission.details.weightLbs} lbs</div>
                       </div>
                       <div>
-                        <label className="block text-xs font-semibold text-slate-500 mb-1">Hazmat</label>
-                        <div className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
-                          selectedSubmission.details.isHazmat 
-                            ? 'bg-red-100 text-red-700' 
-                            : 'bg-emerald-100 text-emerald-700'
-                        }`}>
-                          {selectedSubmission.details.isHazmat ? 'YES' : 'NO'}
-                        </div>
-                      </div>
-                      <div>
                         <label className="block text-xs font-semibold text-slate-500 mb-1">Reefer Required</label>
                         <div className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
                           selectedSubmission.details.isReeferRequired 
@@ -878,7 +987,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
                         </div>
                       </div>
                       {selectedSubmission.details.appointments && (
-                        <div className="md:col-span-2">
+                        <div>
                           <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1">
                             <Calendar className="w-3 h-3" /> Appointments
                           </label>
@@ -929,6 +1038,247 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
                     </div>
                   )}
 
+                  {/* Post-Submission Data Section */}
+                  <div className="border-t-4 border-blue-500 pt-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <DollarSign className="w-5 h-5 text-green-600" />
+                        Post-Submission Data (Admin Editable)
+                      </h4>
+                      {!editMode && (
+                        <button
+                          onClick={handleEditPostData}
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold shadow-sm transition-all"
+                        >
+                          <Edit className="w-4 h-4" />
+                          Edit Data
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Financial Data */}
+                    <div className="bg-white border border-slate-300 rounded-lg p-5 mb-4">
+                      <h5 className="text-sm font-bold text-slate-600 uppercase mb-4">Financial Information</h5>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-500 mb-2">Net Cost (CAD)</label>
+                          {editMode ? (
+                            <input
+                              type="text"
+                              value={editedPostData.netCostCAD || ''}
+                              onChange={(e) => handlePostDataChange('netCostCAD', e.target.value)}
+                              placeholder="$0.00"
+                              className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                            />
+                          ) : (
+                            <div className="text-sm font-medium text-slate-900">{editedPostData.netCostCAD || '—'}</div>
+                          )}
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-500 mb-2">Sell Rate to Customer (CAD)</label>
+                          {editMode ? (
+                            <input
+                              type="text"
+                              value={editedPostData.sellRateCAD || ''}
+                              onChange={(e) => handlePostDataChange('sellRateCAD', e.target.value)}
+                              placeholder="$0.00"
+                              className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                            />
+                          ) : (
+                            <div className="text-sm font-medium text-slate-900">{editedPostData.sellRateCAD || '—'}</div>
+                          )}
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-500 mb-2">Margin (CAD)</label>
+                          {editMode ? (
+                            <input
+                              type="text"
+                              value={editedPostData.marginCAD || ''}
+                              onChange={(e) => handlePostDataChange('marginCAD', e.target.value)}
+                              placeholder="$0.00"
+                              className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                            />
+                          ) : (
+                            <div className="text-sm font-medium text-slate-900">{editedPostData.marginCAD || '—'}</div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Status & Carrier Info */}
+                    <div className="bg-white border border-slate-300 rounded-lg p-5 mb-4">
+                      <h5 className="text-sm font-bold text-slate-600 uppercase mb-4">Status & Carrier Information</h5>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-500 mb-2">Won / Lost</label>
+                          {editMode ? (
+                            <select
+                              value={editedPostData.wonLost || ''}
+                              onChange={(e) => handlePostDataChange('wonLost', e.target.value)}
+                              className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                            >
+                              <option value="">Select...</option>
+                              <option value="Won">Won</option>
+                              <option value="Lost">Lost</option>
+                            </select>
+                          ) : (
+                            <div className="text-sm font-medium text-slate-900">
+                              {editedPostData.wonLost ? (
+                                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                                  editedPostData.wonLost === 'Won' 
+                                    ? 'bg-emerald-100 text-emerald-700' 
+                                    : 'bg-red-100 text-red-700'
+                                }`}>
+                                  {editedPostData.wonLost}
+                                </span>
+                              ) : '—'}
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-500 mb-2">Carrier Name</label>
+                          {editMode ? (
+                            <input
+                              type="text"
+                              value={editedPostData.carrierName || ''}
+                              onChange={(e) => handlePostDataChange('carrierName', e.target.value)}
+                              placeholder="Carrier name"
+                              className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                            />
+                          ) : (
+                            <div className="text-sm font-medium text-slate-900">{editedPostData.carrierName || '—'}</div>
+                          )}
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-500 mb-2">HL Load Number</label>
+                          {editMode ? (
+                            <input
+                              type="text"
+                              value={editedPostData.hlLoadNumber || ''}
+                              onChange={(e) => handlePostDataChange('hlLoadNumber', e.target.value)}
+                              placeholder="Load number"
+                              className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                            />
+                          ) : (
+                            <div className="text-sm font-medium text-slate-900">{editedPostData.hlLoadNumber || '—'}</div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Timing & Rep Info */}
+                    <div className="bg-white border border-slate-300 rounded-lg p-5 mb-4">
+                      <h5 className="text-sm font-bold text-slate-600 uppercase mb-4">Timing & Representative</h5>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-500 mb-2">Pricing Rep</label>
+                          {editMode ? (
+                            <input
+                              type="text"
+                              value={editedPostData.pricingRep || ''}
+                              onChange={(e) => handlePostDataChange('pricingRep', e.target.value)}
+                              placeholder="Representative name"
+                              className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                            />
+                          ) : (
+                            <div className="text-sm font-medium text-slate-900">{editedPostData.pricingRep || '—'}</div>
+                          )}
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-500 mb-2">Day of Week</label>
+                          {editMode ? (
+                            <input
+                              type="text"
+                              value={editedPostData.dayOfWeek || ''}
+                              onChange={(e) => handlePostDataChange('dayOfWeek', e.target.value)}
+                              placeholder="e.g., Monday"
+                              className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                            />
+                          ) : (
+                            <div className="text-sm font-medium text-slate-900">{editedPostData.dayOfWeek || '—'}</div>
+                          )}
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-500 mb-2">Month</label>
+                          {editMode ? (
+                            <input
+                              type="text"
+                              value={editedPostData.month || ''}
+                              onChange={(e) => handlePostDataChange('month', e.target.value)}
+                              placeholder="e.g., January"
+                              className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                            />
+                          ) : (
+                            <div className="text-sm font-medium text-slate-900">{editedPostData.month || '—'}</div>
+                          )}
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-500 mb-2">Time Received</label>
+                          {editMode ? (
+                            <input
+                              type="text"
+                              value={editedPostData.timeReceived || ''}
+                              onChange={(e) => handlePostDataChange('timeReceived', e.target.value)}
+                              placeholder="e.g., 09:30 AM"
+                              className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                            />
+                          ) : (
+                            <div className="text-sm font-medium text-slate-900">{editedPostData.timeReceived || '—'}</div>
+                          )}
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-500 mb-2">Time Quoted</label>
+                          {editMode ? (
+                            <input
+                              type="text"
+                              value={editedPostData.timeQuoted || ''}
+                              onChange={(e) => handlePostDataChange('timeQuoted', e.target.value)}
+                              placeholder="e.g., 10:15 AM"
+                              className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                            />
+                          ) : (
+                            <div className="text-sm font-medium text-slate-900">{editedPostData.timeQuoted || '—'}</div>
+                          )}
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-500 mb-2">Total Time</label>
+                          {editMode ? (
+                            <input
+                              type="text"
+                              value={editedPostData.totalTime || ''}
+                              onChange={(e) => handlePostDataChange('totalTime', e.target.value)}
+                              placeholder="e.g., 45 minutes"
+                              className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                            />
+                          ) : (
+                            <div className="text-sm font-medium text-slate-900">{editedPostData.totalTime || '—'}</div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Customer Feedback */}
+                    <div className="bg-white border border-slate-300 rounded-lg p-5 mb-4">
+                      <h5 className="text-sm font-bold text-slate-600 uppercase mb-4 flex items-center gap-2">
+                        <MessageSquare className="w-4 h-4" />
+                        Customer Feedback
+                      </h5>
+                      {editMode ? (
+                        <textarea
+                          value={editedPostData.customerFeedback || ''}
+                          onChange={(e) => handlePostDataChange('customerFeedback', e.target.value)}
+                          placeholder="Enter customer feedback..."
+                          rows={4}
+                          className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                        />
+                      ) : (
+                        <div className="text-sm text-slate-900 whitespace-pre-wrap">
+                          {editedPostData.customerFeedback || '—'}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   {/* File Info */}
                   <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
                     <div className="flex items-center justify-between">
@@ -955,39 +1305,80 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
 
                 {/* Modal Footer */}
                 <div className="sticky bottom-0 bg-slate-50 border-t border-slate-200 px-6 py-4 flex justify-between items-center">
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-semibold text-slate-600">Download as:</span>
-                    <button
-                      onClick={handleDownloadWord}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold shadow-sm hover:shadow transition-all"
-                      title="Download as Word document"
-                    >
-                      <FileText className="w-4 h-4" />
-                      Word
-                    </button>
-                    <button
-                      onClick={handleDownloadExcel}
-                      className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold shadow-sm hover:shadow transition-all"
-                      title="Download as Excel spreadsheet"
-                    >
-                      <FileSpreadsheet className="w-4 h-4" />
-                      Excel
-                    </button>
-                    <button
-                      onClick={handleDownloadPDF}
-                      className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold shadow-sm hover:shadow transition-all"
-                      title="Download as PDF document"
-                    >
-                      <FileIcon className="w-4 h-4" />
-                      PDF
-                    </button>
-                  </div>
-                  <button
-                    onClick={() => setSelectedSubmission(null)}
-                    className="px-5 py-2.5 bg-slate-600 text-white rounded-lg font-semibold hover:bg-slate-700 transition-colors"
-                  >
-                    Close
-                  </button>
+                  {editMode ? (
+                    <div className="flex justify-end gap-3 w-full">
+                      <button
+                        onClick={handleCancelEdit}
+                        disabled={saving}
+                        className="px-5 py-2.5 bg-slate-200 text-slate-700 rounded-lg font-semibold hover:bg-slate-300 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleSavePostData}
+                        disabled={saving}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold shadow-sm transition-all ${
+                          saving
+                            ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                            : 'bg-green-600 hover:bg-green-700 text-white hover:shadow'
+                        }`}
+                      >
+                        {saving ? (
+                          <>
+                            <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="w-4 h-4" />
+                            Save Changes
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-semibold text-slate-600">Download as:</span>
+                        <button
+                          onClick={handleDownloadWord}
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold shadow-sm hover:shadow transition-all"
+                          title="Download as Word document"
+                        >
+                          <FileText className="w-4 h-4" />
+                          Word
+                        </button>
+                        <button
+                          onClick={handleDownloadExcel}
+                          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold shadow-sm hover:shadow transition-all"
+                          title="Download as Excel spreadsheet"
+                        >
+                          <FileSpreadsheet className="w-4 h-4" />
+                          Excel
+                        </button>
+                        <button
+                          onClick={handleDownloadPDF}
+                          className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold shadow-sm hover:shadow transition-all"
+                          title="Download as PDF document"
+                        >
+                          <FileIcon className="w-4 h-4" />
+                          PDF
+                        </button>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setSelectedSubmission(null);
+                          setEditMode(false);
+                        }}
+                        className="px-5 py-2.5 bg-slate-600 text-white rounded-lg font-semibold hover:bg-slate-700 transition-colors"
+                      >
+                        Close
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

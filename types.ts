@@ -13,7 +13,14 @@ export interface Dimension {
 
 export type ServiceType = 'FTL' | 'LTL' | 'Intermodal' | 'Flatbed' | 'Dry Van' | 'Reefer' | 'Step Deck' | 'Straight Truck';
 
+export type ShipmentType = 'Business to Business' | 'Business to Residential';
+
+export type CrossBorderStatus = 'Cross Border' | 'Domestic' | 'Interstate';
+
+export type ShipmentTiming = 'Ready Now' | 'Ready Time' | 'Future Quote';
+
 export interface ShipmentDetails {
+  // Existing fields
   weightLbs: string;
   dimensions: Dimension[];
   isHazmat: boolean;
@@ -21,6 +28,15 @@ export interface ShipmentDetails {
   appointments: string;
   additionalNotes: string;
   serviceType: ServiceType;
+  
+  // New fields
+  shipmentType: ShipmentType;
+  crossBorderStatus: CrossBorderStatus;
+  commodity: string;
+  unNumber: string;
+  equipmentType: string;
+  shipmentTiming: ShipmentTiming;
+  readyTime: string;
 }
 
 export interface ShipmentData {

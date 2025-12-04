@@ -165,6 +165,22 @@ export const adminAPI = {
 };
 
 // Submission interfaces
+export interface PostSubmissionData {
+  netCostCAD?: string;
+  sellRateCAD?: string;
+  marginCAD?: string;
+  wonLost?: '' | 'Won' | 'Lost';
+  carrierName?: string;
+  hlLoadNumber?: string;
+  pricingRep?: string;
+  dayOfWeek?: string;
+  month?: string;
+  timeReceived?: string;
+  timeQuoted?: string;
+  totalTime?: string;
+  customerFeedback?: string;
+}
+
 export interface Submission {
   _id: string;
   user: {
@@ -196,9 +212,18 @@ export interface Submission {
     appointments: string;
     additionalNotes: string;
     serviceType: string;
+    shipmentType?: string;
+    crossBorderStatus?: string;
+    commodity?: string;
+    unNumber?: string;
+    equipmentType?: string;
+    shipmentTiming?: string;
+    readyTime?: string;
   };
   fileType: 'word' | 'excel' | 'pdf';
+  postSubmission?: PostSubmissionData;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface SubmissionStats {
@@ -222,6 +247,13 @@ export const submissionAPI = {
 
   getMySubmissions: async (): Promise<Submission[]> => {
     return apiRequest<Submission[]>('/submissions');
+  },
+
+  updateSubmission: async (submissionId: string, postSubmission: PostSubmissionData): Promise<{ message: string; submission: Submission }> => {
+    return apiRequest<{ message: string; submission: Submission }>(`/submissions/${submissionId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ postSubmission }),
+    });
   },
 };
 

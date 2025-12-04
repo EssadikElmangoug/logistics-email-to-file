@@ -43,39 +43,73 @@ export const generateAndDownloadPDF = (data: ShipmentData) => {
   // Get final Y from the previous table. jsPDF autoTable attaches `lastAutoTable` to doc.
   finalY = (doc as any).lastAutoTable.finalY + 10;
 
-  // Details Title
+  // Classification Title
   doc.setFontSize(12);
   doc.setTextColor(0, 0, 0);
+  doc.text("CLASSIFICATION", 14, finalY);
+  finalY += 5;
+
+  // Classification Table
+  autoTable(doc, {
+    startY: finalY,
+    head: [['SHIPMENT TYPE', 'CROSS BORDER', 'TIMING', 'READY TIME']],
+    body: [
+      [
+        data.details.shipmentType || "N/A",
+        data.details.crossBorderStatus || "N/A",
+        data.details.shipmentTiming || "N/A",
+        data.details.readyTime || "N/A"
+      ]
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', lineWidth: 0.1, lineColor: [200, 200, 200] },
+    styles: { fontSize: 9, cellPadding: 4, lineColor: [200, 200, 200], lineWidth: 0.1 },
+  });
+
+  finalY = (doc as any).lastAutoTable.finalY + 10;
+
+  // Commodity Details Title
+  doc.text("COMMODITY DETAILS", 14, finalY);
+  finalY += 5;
+
+  // Commodity Details Table
+  autoTable(doc, {
+    startY: finalY,
+    head: [['COMMODITY', 'EQUIPMENT TYPE', 'HAZMAT', 'UN NUMBER']],
+    body: [
+      [
+        data.details.commodity || "N/A",
+        data.details.equipmentType || "N/A",
+        data.details.isHazmat ? "YES" : "NO",
+        data.details.unNumber || "N/A"
+      ]
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', lineWidth: 0.1, lineColor: [200, 200, 200] },
+    styles: { fontSize: 9, cellPadding: 4, lineColor: [200, 200, 200], lineWidth: 0.1 },
+  });
+
+  finalY = (doc as any).lastAutoTable.finalY + 10;
+
+  // Details Title
   doc.text("SHIPMENT DETAILS", 14, finalY);
   finalY += 5;
 
   // Details Table
   autoTable(doc, {
     startY: finalY,
-    head: [['SERVICE TYPE', 'TOTAL WEIGHT', 'HAZMAT', 'REEFER REQ.']],
+    head: [['SERVICE TYPE', 'TOTAL WEIGHT', 'REEFER REQ.', 'APPOINTMENTS']],
     body: [
       [
         data.details.serviceType || "N/A",
         `${data.details.weightLbs} lbs`,
-        data.details.isHazmat ? "YES" : "NO",
-        data.details.isReeferRequired ? "YES" : "NO"
+        data.details.isReeferRequired ? "YES" : "NO",
+        data.details.appointments || "N/A"
       ]
     ],
     theme: 'grid',
     headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', lineWidth: 0.1, lineColor: [200, 200, 200] },
-    styles: { fontSize: 10, cellPadding: 5, lineColor: [200, 200, 200], lineWidth: 0.1 },
-  });
-
-  finalY = (doc as any).lastAutoTable.finalY + 10;
-
-  // Appointments Table
-  autoTable(doc, {
-    startY: finalY,
-    head: [['APPOINTMENTS']],
-    body: [[data.details.appointments || "N/A"]],
-    theme: 'grid',
-    headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', lineWidth: 0.1, lineColor: [200, 200, 200] },
-    styles: { fontSize: 10, cellPadding: 5, lineColor: [200, 200, 200], lineWidth: 0.1 },
+    styles: { fontSize: 9, cellPadding: 4, lineColor: [200, 200, 200], lineWidth: 0.1 },
   });
 
   finalY = (doc as any).lastAutoTable.finalY + 10;

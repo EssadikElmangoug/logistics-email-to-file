@@ -1,6 +1,6 @@
 import React from 'react';
-import { ShipmentData, Dimension, ServiceType } from '../types';
-import { FileText, Pencil, Truck, MapPin, Package, AlertTriangle, Thermometer, Calendar, Clipboard, FileSpreadsheet, FileIcon, User, Mail, Send } from 'lucide-react';
+import { ShipmentData, Dimension, ServiceType, ShipmentType, CrossBorderStatus, ShipmentTiming } from '../types';
+import { FileText, Pencil, Truck, MapPin, Package, AlertTriangle, Thermometer, Calendar, Clipboard, FileSpreadsheet, FileIcon, User, Mail, Send, Building2, Globe2, Box, Clock } from 'lucide-react';
 
 interface ExtractionResultProps {
   data: ShipmentData;
@@ -55,6 +55,36 @@ export const ExtractionResult: React.FC<ExtractionResultProps> = ({
       details: {
         ...data.details,
         serviceType: value
+      }
+    });
+  };
+
+  const handleShipmentTypeChange = (value: ShipmentType) => {
+    onUpdate({
+      ...data,
+      details: {
+        ...data.details,
+        shipmentType: value
+      }
+    });
+  };
+
+  const handleCrossBorderStatusChange = (value: CrossBorderStatus) => {
+    onUpdate({
+      ...data,
+      details: {
+        ...data.details,
+        crossBorderStatus: value
+      }
+    });
+  };
+
+  const handleShipmentTimingChange = (value: ShipmentTiming) => {
+    onUpdate({
+      ...data,
+      details: {
+        ...data.details,
+        shipmentTiming: value
       }
     });
   };
@@ -261,6 +291,119 @@ export const ExtractionResult: React.FC<ExtractionResultProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Shipment Classification Section */}
+          <div className="md:col-span-2 space-y-3">
+            <h3 className="text-slate-500 font-bold uppercase tracking-wider text-[11px] flex items-center gap-2">
+              <Building2 className="w-3.5 h-3.5" /> Shipment Classification
+            </h3>
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Shipment Type */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-2">Shipment Type</label>
+                <select
+                  value={data.details.shipmentType || 'Business to Business'}
+                  onChange={(e) => handleShipmentTypeChange(e.target.value as ShipmentType)}
+                  className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                >
+                  <option value="Business to Business">Business to Business</option>
+                  <option value="Business to Residential">Business to Residential</option>
+                </select>
+              </div>
+
+              {/* Cross Border Status */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-2">Cross Border Status</label>
+                <select
+                  value={data.details.crossBorderStatus || 'Interstate'}
+                  onChange={(e) => handleCrossBorderStatusChange(e.target.value as CrossBorderStatus)}
+                  className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                >
+                  <option value="Cross Border">Cross Border</option>
+                  <option value="Domestic">Domestic</option>
+                  <option value="Interstate">Interstate</option>
+                </select>
+              </div>
+
+              {/* Shipment Timing */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-2">Shipment Timing</label>
+                <select
+                  value={data.details.shipmentTiming || 'Ready Now'}
+                  onChange={(e) => handleShipmentTimingChange(e.target.value as ShipmentTiming)}
+                  className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                >
+                  <option value="Ready Now">Ready Now</option>
+                  <option value="Ready Time">Ready Time</option>
+                  <option value="Future Quote">Future Quote</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Commodity Details Section */}
+          <div className="md:col-span-2 space-y-3">
+            <h3 className="text-slate-500 font-bold uppercase tracking-wider text-[11px] flex items-center gap-2">
+              <Box className="w-3.5 h-3.5" /> Commodity Details
+            </h3>
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Commodity */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-2">Commodity</label>
+                <input 
+                  type="text" 
+                  value={data.details.commodity || ''}
+                  onChange={(e) => handleInputChange('details', 'commodity', e.target.value)}
+                  className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                  placeholder="e.g., Electronics, Furniture"
+                />
+              </div>
+
+              {/* Equipment Type */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-2">Equipment Type</label>
+                <input 
+                  type="text" 
+                  value={data.details.equipmentType || ''}
+                  onChange={(e) => handleInputChange('details', 'equipmentType', e.target.value)}
+                  className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                  placeholder="e.g., Liftgate required"
+                />
+              </div>
+
+              {/* UN Number */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-2">UN Number {data.details.isHazmat && <span className="text-red-500">*</span>}</label>
+                <input 
+                  type="text" 
+                  value={data.details.unNumber || ''}
+                  onChange={(e) => handleInputChange('details', 'unNumber', e.target.value)}
+                  className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                  placeholder={data.details.isHazmat ? "e.g., UN1203" : "Only if hazmat"}
+                  disabled={!data.details.isHazmat}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Ready Time (conditional) */}
+          {data.details.shipmentTiming === 'Ready Time' && (
+            <div className="md:col-span-2 space-y-3">
+              <h3 className="text-slate-500 font-bold uppercase tracking-wider text-[11px] flex items-center gap-2">
+                <Clock className="w-3.5 h-3.5" /> Ready Time
+              </h3>
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                <label className="block text-xs font-semibold text-slate-500 mb-2">Pickup Ready Time</label>
+                <input 
+                  type="text" 
+                  value={data.details.readyTime || ''}
+                  onChange={(e) => handleInputChange('details', 'readyTime', e.target.value)}
+                  className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                  placeholder="e.g., Tomorrow 9am, Dec 15 2pm"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Details Section */}
           <div className="md:col-span-2 space-y-3">

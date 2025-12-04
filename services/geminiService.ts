@@ -59,8 +59,39 @@ export const extractShipmentData = async (emailText: string): Promise<ShipmentDa
             description: "Type of service: FTL (Full Truckload), LTL (Less Than Truckload), Intermodal, Flatbed, Dry Van, Reefer, Step Deck, or Straight Truck. Extract from text or infer based on shipment characteristics.",
             enum: ["FTL", "LTL", "Intermodal", "Flatbed", "Dry Van", "Reefer", "Step Deck", "Straight Truck"]
           },
+          shipmentType: {
+            type: Type.STRING,
+            description: "Type of shipment destination: 'Business to Business' (B2B, commercial) or 'Business to Residential' (B2R, home delivery). Infer from context if not explicitly stated.",
+            enum: ["Business to Business", "Business to Residential"]
+          },
+          crossBorderStatus: {
+            type: Type.STRING,
+            description: "Border crossing status: 'Cross Border' (international, crosses country borders), 'Domestic' (within same state/province), or 'Interstate' (crosses state/province lines within same country). Infer from pickup and delivery locations.",
+            enum: ["Cross Border", "Domestic", "Interstate"]
+          },
+          commodity: {
+            type: Type.STRING,
+            description: "What is being shipped (e.g., 'Electronics', 'Furniture', 'Auto Parts', 'Food Products'). Extract from text or leave empty if not mentioned."
+          },
+          unNumber: {
+            type: Type.STRING,
+            description: "UN Number for hazardous materials (e.g., 'UN1203'). Only extract if hazmat is true and UN number is mentioned. Leave empty otherwise."
+          },
+          equipmentType: {
+            type: Type.STRING,
+            description: "Required equipment type (e.g., 'Dry Van', 'Flatbed', 'Reefer', 'Step Deck', 'Box Truck', 'Liftgate required'). Extract any equipment requirements mentioned."
+          },
+          shipmentTiming: {
+            type: Type.STRING,
+            description: "Shipment readiness: 'Ready Now' (immediate pickup), 'Ready Time' (scheduled pickup time), or 'Future Quote' (quote only, no immediate shipment). Infer from context.",
+            enum: ["Ready Now", "Ready Time", "Future Quote"]
+          },
+          readyTime: {
+            type: Type.STRING,
+            description: "Specific ready/pickup time if shipmentTiming is 'Ready Time' (e.g., 'Tomorrow 9am', 'Dec 15 2pm'). Leave empty if Ready Now or Future Quote."
+          }
         },
-        required: ["weightLbs", "isHazmat", "isReeferRequired", "dimensions", "serviceType"],
+        required: ["weightLbs", "isHazmat", "isReeferRequired", "dimensions", "serviceType", "shipmentType", "crossBorderStatus", "commodity", "equipmentType", "shipmentTiming"],
       },
     },
     required: ["shipper", "receiver", "details"],
@@ -83,6 +114,13 @@ export const extractShipmentData = async (emailText: string): Promise<ShipmentDa
       4. If appointments are mentioned (e.g. "Pickup 9am", "Appt required"), include them. If not, leave empty string.
       5. If Hazmat or Reefer is not mentioned, assume false.
       6. Extract the service type (FTL, LTL, Intermodal, Flatbed, Dry Van, Reefer, Step Deck, Straight Truck) from the text. If mentioned explicitly, use that. If not mentioned but reefer is required, use "Reefer". If not mentioned, infer from context (e.g., large weight = FTL, small = LTL). Default to "FTL" if unclear.
+      7. For shipmentType: Determine if delivery is to a business (commercial address, warehouse) = "Business to Business" or to a residential address (home) = "Business to Residential". Default to "Business to Business" if unclear.
+      8. For crossBorderStatus: If pickup and delivery are in different countries = "Cross Border". If same state/province = "Domestic". If different states/provinces in same country = "Interstate". Default to "Interstate" if unclear.
+      9. For commodity: Extract what is being shipped (e.g., "Electronics", "Furniture", "Auto Parts"). Leave empty if not mentioned.
+      10. For unNumber: Only extract if hazmat is true and a UN number is mentioned (e.g., "UN1203"). Leave empty otherwise.
+      11. For equipmentType: Extract any special equipment requirements mentioned (e.g., "Liftgate required", "Flatbed needed"). Leave empty if not mentioned.
+      12. For shipmentTiming: If text mentions "immediate", "ASAP", "ready now" = "Ready Now". If specific date/time mentioned = "Ready Time". If "quote only", "rate request" = "Future Quote". Default to "Ready Now".
+      13. For readyTime: Only fill if shipmentTiming is "Ready Time". Extract the specific pickup date/time. Leave empty otherwise.
       `,
       config: {
         responseMimeType: "application/json",
@@ -104,6 +142,15 @@ export const extractShipmentData = async (emailText: string): Promise<ShipmentDa
     if (!parsedData.receiver) parsedData.receiver = { city: "", stateOrProvince: "", postalCode: "" };
     if (!parsedData.customerName) parsedData.customerName = "";
     if (!parsedData.details.serviceType) parsedData.details.serviceType = "FTL";
+    
+    // Defaults for new fields
+    if (!parsedData.details.shipmentType) parsedData.details.shipmentType = "Business to Business";
+    if (!parsedData.details.crossBorderStatus) parsedData.details.crossBorderStatus = "Interstate";
+    if (!parsedData.details.commodity) parsedData.details.commodity = "";
+    if (!parsedData.details.unNumber) parsedData.details.unNumber = "";
+    if (!parsedData.details.equipmentType) parsedData.details.equipmentType = "";
+    if (!parsedData.details.shipmentTiming) parsedData.details.shipmentTiming = "Ready Now";
+    if (!parsedData.details.readyTime) parsedData.details.readyTime = "";
     
     return parsedData;
   } catch (error) {

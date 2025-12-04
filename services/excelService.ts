@@ -21,15 +21,32 @@ export const generateAndDownloadExcel = (data: ShipmentData) => {
       ""
     ],
     blank,
+    ["CLASSIFICATION"],
+    ["SHIPMENT TYPE", "CROSS BORDER", "TIMING", "READY TIME"],
+    [
+      data.details.shipmentType || "N/A",
+      data.details.crossBorderStatus || "N/A",
+      data.details.shipmentTiming || "N/A",
+      data.details.readyTime || "N/A"
+    ],
+    blank,
+    ["COMMODITY DETAILS"],
+    ["COMMODITY", "EQUIPMENT TYPE", "HAZMAT", "UN NUMBER"],
+    [
+      data.details.commodity || "N/A",
+      data.details.equipmentType || "N/A",
+      data.details.isHazmat ? "YES" : "NO",
+      data.details.unNumber || "N/A"
+    ],
+    blank,
     ["SHIPMENT DETAILS"],
-    ["SERVICE TYPE", "TOTAL WEIGHT", "HAZMAT", "REEFER REQ."],
+    ["SERVICE TYPE", "TOTAL WEIGHT", "REEFER REQ.", "APPOINTMENTS"],
     [
       data.details.serviceType || "N/A",
       `${data.details.weightLbs} lbs`, 
-      data.details.isHazmat ? "YES" : "NO", 
-      data.details.isReeferRequired ? "YES" : "NO"
+      data.details.isReeferRequired ? "YES" : "NO",
+      data.details.appointments || "N/A"
     ],
-    ["APPOINTMENTS", data.details.appointments || "N/A", "", ""],
     blank,
     ["DIMENSIONS"],
     ["QTY", "LENGTH", "WIDTH", "HEIGHT"]
@@ -69,11 +86,12 @@ export const generateAndDownloadExcel = (data: ShipmentData) => {
     { s: { r: 4, c: 2 }, e: { r: 4, c: 3 } }, // Receiver Header
     { s: { r: 5, c: 0 }, e: { r: 5, c: 1 } }, // Shipper Val
     { s: { r: 5, c: 2 }, e: { r: 5, c: 3 } }, // Receiver Val
-    { s: { r: 7, c: 0 }, e: { r: 7, c: 3 } }, // Details Header
-    { s: { r: 11, c: 0 }, e: { r: 11, c: 3 } }, // Dimensions Header
-    { s: { r: 18, c: 0 }, e: { r: 18, c: 3 } }, // Notes Header
-    { s: { r: 19, c: 0 }, e: { r: 19, c: 3 } }, // Notes Val
-    { s: { r: 10, c: 0 }, e: { r: 10, c: 3 } }, // Appointments
+    { s: { r: 7, c: 0 }, e: { r: 7, c: 3 } }, // Classification Header
+    { s: { r: 11, c: 0 }, e: { r: 11, c: 3 } }, // Commodity Details Header
+    { s: { r: 15, c: 0 }, e: { r: 15, c: 3 } }, // Shipment Details Header
+    { s: { r: 19, c: 0 }, e: { r: 19, c: 3 } }, // Dimensions Header
+    { s: { r: 27, c: 0 }, e: { r: 27, c: 3 } }, // Notes Header
+    { s: { r: 28, c: 0 }, e: { r: 28, c: 3 } }, // Notes Val
   ];
 
   utils.book_append_sheet(wb, ws, "Shipment Order");

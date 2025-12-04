@@ -1,6 +1,8 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import connectDB from './config/database.js';
 import authRoutes from './routes/auth.js';
 import shipmentRoutes from './routes/shipment.js';
@@ -8,8 +10,23 @@ import adminRoutes from './routes/admin.js';
 import submissionRoutes from './routes/submissions.js';
 import emailRoutes from './routes/email.js';
 
-// Load env vars
-dotenv.config();
+// Get directory path for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Load env vars - explicitly specify path for Docker compatibility
+// Note: In Docker, env_file in docker-compose.yml should handle this, but we load .env as fallback
+dotenv.config({ path: join(__dirname, '.env') });
+
+// Log email configuration on startup (for debugging)
+console.log('📧 Email Configuration Check:');
+console.log('  SMTP_HOST:', process.env.SMTP_HOST || 'NOT SET');
+console.log('  SMTP_PORT:', process.env.SMTP_PORT || 'NOT SET');
+console.log('  SMTP_USER:', process.env.SMTP_USER || 'NOT SET');
+console.log('  SMTP_FROM:', process.env.SMTP_FROM || process.env.SMTP_USER || 'NOT SET');
+console.log('  SMTP_PASS:', process.env.SMTP_PASS ? `Set (${process.env.SMTP_PASS.length} chars)` : 'NOT SET');
+console.log('  PRICING_EMAIL:', process.env.PRICING_EMAIL || 'NOT SET');
+console.log('');
 
 // Validate required environment variables
 const requiredEnvVars = ['JWT_SECRET'];
