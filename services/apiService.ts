@@ -162,6 +162,36 @@ export const adminAPI = {
   getSubmissionStats: async (): Promise<SubmissionStats> => {
     return apiRequest<SubmissionStats>('/admin/submissions/stats');
   },
+
+  exportSubmissions: async (): Promise<void> => {
+    const token = getToken();
+    const response = await fetch(`${API_URL}/admin/submissions/export`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.message || 'Failed to export submissions');
+    }
+
+    // Get the blob from response
+    const blob = await response.blob();
+
+    // Create a download link
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `submissions_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+
+    // Cleanup
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  },
 };
 
 // Submission interfaces

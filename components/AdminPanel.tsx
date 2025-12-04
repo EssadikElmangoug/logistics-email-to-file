@@ -33,6 +33,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
   const [editMode, setEditMode] = useState(false);
   const [editedPostData, setEditedPostData] = useState<PostSubmissionData>({});
   const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     loadUsers();
@@ -263,6 +264,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
 
   const handlePostDataChange = (field: keyof PostSubmissionData, value: string) => {
     setEditedPostData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleExportSubmissions = async () => {
+    try {
+      setExporting(true);
+      setError(null);
+      await adminAPI.exportSubmissions();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to export submissions');
+    } finally {
+      setExporting(false);
+    }
   };
 
   return (
@@ -612,11 +625,38 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
               )}
 
               {/* Header */}
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-slate-900">
-                  Submissions by User
-                </h3>
-                <p className="text-sm text-slate-500 mt-1">View submissions grouped by user</p>
+              <div className="mb-6 flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900">
+                    Submissions by User
+                  </h3>
+                  <p className="text-sm text-slate-500 mt-1">View submissions grouped by user</p>
+                </div>
+                <button
+                  onClick={handleExportSubmissions}
+                  disabled={exporting || (submissionStats?.totalSubmissions === 0)}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold shadow-sm hover:shadow transition-all ${
+                    exporting || (submissionStats?.totalSubmissions === 0)
+                      ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                      : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                  }`}
+                  title="Export all submissions to Excel"
+                >
+                  {exporting ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Exporting...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4" />
+                      Export All to Excel
+                    </>
+                  )}
+                </button>
               </div>
 
               {/* Users with Submissions */}
