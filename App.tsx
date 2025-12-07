@@ -133,7 +133,7 @@ const App: React.FC = () => {
     await saveSubmission('pdf');
   };
 
-  const handleSendToPricingClick = () => {
+  const handleSendToPricingClick = async () => {
     const newMode = !sendToPricingMode;
     setSendToPricingMode(newMode);
     if (!newMode) {
@@ -141,8 +141,15 @@ const App: React.FC = () => {
       setPricingEmail('');
       setError(null);
     } else {
-      // Entering send to pricing mode - clear any errors
+      // Entering send to pricing mode - fetch default email
       setError(null);
+      try {
+        const response = await emailAPI.getDefaultPricingEmail();
+        setPricingEmail(response.email || '');
+      } catch (err) {
+        console.error('Failed to fetch default pricing email:', err);
+        // Continue with empty email - user can still enter manually
+      }
     }
   };
 

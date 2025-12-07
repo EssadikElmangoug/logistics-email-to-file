@@ -91,16 +91,24 @@ export const generateAndDownloadWord = async (data: ShipmentData) => {
         children: [
           createHeaderCell("SHIPMENT TYPE"),
           createCell(data.details.shipmentType || "N/A"),
-          createHeaderCell("CROSS BORDER"),
-          createCell(data.details.crossBorderStatus || "N/A"),
+          createHeaderCell("RECEIVER TYPE"),
+          createCell(data.details.receiverType || "N/A"),
         ],
       }),
       new TableRow({
         children: [
+          createHeaderCell("CROSS BORDER"),
+          createCell(data.details.crossBorderStatus || "N/A"),
           createHeaderCell("TIMING"),
           createCell(data.details.shipmentTiming || "N/A"),
+        ],
+      }),
+      new TableRow({
+        children: [
           createHeaderCell("READY TIME"),
           createCell(data.details.readyTime || "N/A"),
+          createHeaderCell(""),
+          createCell(""),
         ],
       }),
     ],
@@ -148,6 +156,15 @@ export const generateAndDownloadWord = async (data: ShipmentData) => {
           createCell(data.details.isReeferRequired ? "YES" : "NO"),
           createHeaderCell("APPOINTMENTS"),
           createCell(data.details.appointments || "N/A"),
+        ],
+      }),
+      // Row 3: Reefer Temperature
+      new TableRow({
+        children: [
+          createHeaderCell("REEFER TEMP"),
+          createCell(data.details.reeferTemperature || "N/A"),
+          createHeaderCell(""),
+          createCell(""),
         ],
       }),
     ],

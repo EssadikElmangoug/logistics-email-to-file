@@ -64,6 +64,11 @@ export const extractShipmentData = async (emailText: string): Promise<ShipmentDa
             description: "Type of shipment destination: 'Business to Business' (B2B, commercial) or 'Business to Residential' (B2R, home delivery). Infer from context if not explicitly stated.",
             enum: ["Business to Business", "Business to Residential"]
           },
+          receiverType: {
+            type: Type.STRING,
+            description: "Type of receiver location: 'Business to Business' (B2B, commercial delivery) or 'Business to Residential' (B2R, residential delivery). Infer from delivery address context.",
+            enum: ["Business to Business", "Business to Residential"]
+          },
           crossBorderStatus: {
             type: Type.STRING,
             description: "Border crossing status: 'Cross Border' (international, crosses country borders), 'Domestic' (within same state/province), or 'Interstate' (crosses state/province lines within same country). Infer from pickup and delivery locations.",
@@ -89,9 +94,13 @@ export const extractShipmentData = async (emailText: string): Promise<ShipmentDa
           readyTime: {
             type: Type.STRING,
             description: "Specific ready/pickup time if shipmentTiming is 'Ready Time' (e.g., 'Tomorrow 9am', 'Dec 15 2pm'). Leave empty if Ready Now or Future Quote."
+          },
+          reeferTemperature: {
+            type: Type.STRING,
+            description: "Required temperature for reefer shipments (e.g., '-10°F', '35-40°F', '2-8°C'). Only extract if service type is Reefer or reefer is required. Leave empty otherwise."
           }
         },
-        required: ["weightLbs", "isHazmat", "isReeferRequired", "dimensions", "serviceType", "shipmentType", "crossBorderStatus", "commodity", "equipmentType", "shipmentTiming"],
+        required: ["weightLbs", "isHazmat", "isReeferRequired", "dimensions", "serviceType", "shipmentType", "receiverType", "crossBorderStatus", "commodity", "equipmentType", "shipmentTiming"],
       },
     },
     required: ["shipper", "receiver", "details"],

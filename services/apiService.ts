@@ -289,16 +289,20 @@ export const submissionAPI = {
 
 // Email API
 export const emailAPI = {
+  getDefaultPricingEmail: async (): Promise<{ email: string }> => {
+    return apiRequest<{ email: string }>('/email/default-pricing');
+  },
+
   sendToPricing: async (email: string | undefined, shipmentData: any): Promise<{ success: boolean; message: string }> => {
     const requestBody: any = {
       ...shipmentData,
     };
-    
+
     // Only include email if provided (otherwise backend will use env default)
     if (email && email.trim()) {
       requestBody.email = email.trim();
     }
-    
+
     return apiRequest<{ success: boolean; message: string }>('/email/send-pricing', {
       method: 'POST',
       body: JSON.stringify(requestBody),

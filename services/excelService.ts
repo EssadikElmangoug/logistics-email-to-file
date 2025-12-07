@@ -5,51 +5,55 @@ export const generateAndDownloadExcel = (data: ShipmentData) => {
   const wb = utils.book_new();
 
   // Helper to create a blank row
-  const blank = ["", "", "", ""];
+  const blank = ["", "", "", "", ""];
 
   // Construct a "Form" like structure in the array of arrays
   const wsData = [
     ["SHIPMENT REQUEST ORDER"],
     blank,
-    ["CUSTOMER", data.customerName || "N/A", "", ""],
+    ["CUSTOMER", data.customerName || "N/A", "", "", ""],
     blank,
-    ["SHIPPER (PICKUP)", "", "RECEIVER (DELIVERY)", ""],
+    ["SHIPPER (PICKUP)", "", "RECEIVER (DELIVERY)", "", ""],
     [
-      `${data.shipper.city}, ${data.shipper.stateOrProvince} ${data.shipper.postalCode || ""}`, 
-      "", 
+      `${data.shipper.city}, ${data.shipper.stateOrProvince} ${data.shipper.postalCode || ""}`,
+      "",
       `${data.receiver.city}, ${data.receiver.stateOrProvince} ${data.receiver.postalCode || ""}`,
+      "",
       ""
     ],
     blank,
     ["CLASSIFICATION"],
-    ["SHIPMENT TYPE", "CROSS BORDER", "TIMING", "READY TIME"],
+    ["SHIPMENT TYPE", "RECEIVER TYPE", "CROSS BORDER", "TIMING", "READY TIME"],
     [
       data.details.shipmentType || "N/A",
+      data.details.receiverType || "N/A",
       data.details.crossBorderStatus || "N/A",
       data.details.shipmentTiming || "N/A",
       data.details.readyTime || "N/A"
     ],
     blank,
     ["COMMODITY DETAILS"],
-    ["COMMODITY", "EQUIPMENT TYPE", "HAZMAT", "UN NUMBER"],
+    ["COMMODITY", "EQUIPMENT TYPE", "HAZMAT", "UN NUMBER", ""],
     [
       data.details.commodity || "N/A",
       data.details.equipmentType || "N/A",
       data.details.isHazmat ? "YES" : "NO",
-      data.details.unNumber || "N/A"
+      data.details.unNumber || "N/A",
+      ""
     ],
     blank,
     ["SHIPMENT DETAILS"],
-    ["SERVICE TYPE", "TOTAL WEIGHT", "REEFER REQ.", "APPOINTMENTS"],
+    ["SERVICE TYPE", "TOTAL WEIGHT", "REEFER REQ.", "REEFER TEMP", "APPOINTMENTS"],
     [
       data.details.serviceType || "N/A",
-      `${data.details.weightLbs} lbs`, 
+      `${data.details.weightLbs} lbs`,
       data.details.isReeferRequired ? "YES" : "NO",
+      data.details.reeferTemperature || "N/A",
       data.details.appointments || "N/A"
     ],
     blank,
     ["DIMENSIONS"],
-    ["QTY", "LENGTH", "WIDTH", "HEIGHT"]
+    ["QTY", "LENGTH", "WIDTH", "HEIGHT", ""]
   ];
 
   // Add fixed 5 rows for dimensions
@@ -59,7 +63,8 @@ export const generateAndDownloadExcel = (data: ShipmentData) => {
       dim?.quantity || "N/A",
       dim?.length || "N/A",
       dim?.width || "N/A",
-      dim?.height || "N/A"
+      dim?.height || "N/A",
+      ""
     ]);
   }
 

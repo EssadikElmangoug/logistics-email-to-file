@@ -43,6 +43,11 @@ const submissionSchema = new mongoose.Schema({
       enum: ['Business to Business', 'Business to Residential'],
       default: 'Business to Business'
     },
+    receiverType: {
+      type: String,
+      enum: ['Business to Business', 'Business to Residential'],
+      default: 'Business to Business'
+    },
     crossBorderStatus: {
       type: String,
       enum: ['Cross Border', 'Domestic', 'Interstate'],
@@ -56,7 +61,8 @@ const submissionSchema = new mongoose.Schema({
       enum: ['Ready Now', 'Ready Time', 'Future Quote'],
       default: 'Ready Now'
     },
-    readyTime: { type: String, default: '' }
+    readyTime: { type: String, default: '' },
+    reeferTemperature: { type: String, default: '' }
   },
   fileType: {
     type: String,

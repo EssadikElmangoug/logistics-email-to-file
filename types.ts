@@ -15,6 +15,8 @@ export type ServiceType = 'FTL' | 'LTL' | 'Intermodal' | 'Flatbed' | 'Dry Van' |
 
 export type ShipmentType = 'Business to Business' | 'Business to Residential';
 
+export type ReceiverType = 'Business to Business' | 'Business to Residential';
+
 export type CrossBorderStatus = 'Cross Border' | 'Domestic' | 'Interstate';
 
 export type ShipmentTiming = 'Ready Now' | 'Ready Time' | 'Future Quote';
@@ -28,15 +30,17 @@ export interface ShipmentDetails {
   appointments: string;
   additionalNotes: string;
   serviceType: ServiceType;
-  
+
   // New fields
   shipmentType: ShipmentType;
+  receiverType: ReceiverType;
   crossBorderStatus: CrossBorderStatus;
   commodity: string;
   unNumber: string;
   equipmentType: string;
   shipmentTiming: ShipmentTiming;
   readyTime: string;
+  reeferTemperature: string;
 }
 
 export interface ShipmentData {

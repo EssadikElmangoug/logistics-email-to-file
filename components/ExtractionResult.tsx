@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShipmentData, Dimension, ServiceType, ShipmentType, CrossBorderStatus, ShipmentTiming } from '../types';
+import { ShipmentData, Dimension, ServiceType, ShipmentType, ReceiverType, CrossBorderStatus, ShipmentTiming } from '../types';
 import { FileText, Pencil, Truck, MapPin, Package, AlertTriangle, Thermometer, Calendar, Clipboard, FileSpreadsheet, FileIcon, User, Mail, Send, Building2, Globe2, Box, Clock } from 'lucide-react';
 
 interface ExtractionResultProps {
@@ -65,6 +65,16 @@ export const ExtractionResult: React.FC<ExtractionResultProps> = ({
       details: {
         ...data.details,
         shipmentType: value
+      }
+    });
+  };
+
+  const handleReceiverTypeChange = (value: ReceiverType) => {
+    onUpdate({
+      ...data,
+      details: {
+        ...data.details,
+        receiverType: value
       }
     });
   };
@@ -297,13 +307,26 @@ export const ExtractionResult: React.FC<ExtractionResultProps> = ({
             <h3 className="text-slate-500 font-bold uppercase tracking-wider text-[11px] flex items-center gap-2">
               <Building2 className="w-3.5 h-3.5" /> Shipment Classification
             </h3>
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Shipment Type */}
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-2">Shipment Type</label>
                 <select
                   value={data.details.shipmentType || 'Business to Business'}
                   onChange={(e) => handleShipmentTypeChange(e.target.value as ShipmentType)}
+                  className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                >
+                  <option value="Business to Business">Business to Business</option>
+                  <option value="Business to Residential">Business to Residential</option>
+                </select>
+              </div>
+
+              {/* Receiver Type */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-2">Receiver Type</label>
+                <select
+                  value={data.details.receiverType || 'Business to Business'}
+                  onChange={(e) => handleReceiverTypeChange(e.target.value as ReceiverType)}
                   className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
                 >
                   <option value="Business to Business">Business to Business</option>
@@ -337,6 +360,22 @@ export const ExtractionResult: React.FC<ExtractionResultProps> = ({
                   <option value="Ready Time">Ready Time</option>
                   <option value="Future Quote">Future Quote</option>
                 </select>
+
+                {/* Show ready time input when Ready Time is selected */}
+                {data.details.shipmentTiming === 'Ready Time' && (
+                  <div className="mt-3">
+                    <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> Pickup Ready Time
+                    </label>
+                    <input
+                      type="text"
+                      value={data.details.readyTime || ''}
+                      onChange={(e) => handleInputChange('details', 'readyTime', e.target.value)}
+                      className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                      placeholder="e.g., Tomorrow 9am, Dec 15 2pm"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -346,12 +385,12 @@ export const ExtractionResult: React.FC<ExtractionResultProps> = ({
             <h3 className="text-slate-500 font-bold uppercase tracking-wider text-[11px] flex items-center gap-2">
               <Box className="w-3.5 h-3.5" /> Commodity Details
             </h3>
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Commodity */}
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-2">Commodity</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={data.details.commodity || ''}
                   onChange={(e) => handleInputChange('details', 'commodity', e.target.value)}
                   className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
@@ -362,48 +401,16 @@ export const ExtractionResult: React.FC<ExtractionResultProps> = ({
               {/* Equipment Type */}
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-2">Equipment Type</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={data.details.equipmentType || ''}
                   onChange={(e) => handleInputChange('details', 'equipmentType', e.target.value)}
                   className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
                   placeholder="e.g., Liftgate required"
                 />
               </div>
-
-              {/* UN Number */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-2">UN Number {data.details.isHazmat && <span className="text-red-500">*</span>}</label>
-                <input 
-                  type="text" 
-                  value={data.details.unNumber || ''}
-                  onChange={(e) => handleInputChange('details', 'unNumber', e.target.value)}
-                  className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
-                  placeholder={data.details.isHazmat ? "e.g., UN1203" : "Only if hazmat"}
-                  disabled={!data.details.isHazmat}
-                />
-              </div>
             </div>
           </div>
-
-          {/* Ready Time (conditional) */}
-          {data.details.shipmentTiming === 'Ready Time' && (
-            <div className="md:col-span-2 space-y-3">
-              <h3 className="text-slate-500 font-bold uppercase tracking-wider text-[11px] flex items-center gap-2">
-                <Clock className="w-3.5 h-3.5" /> Ready Time
-              </h3>
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
-                <label className="block text-xs font-semibold text-slate-500 mb-2">Pickup Ready Time</label>
-                <input 
-                  type="text" 
-                  value={data.details.readyTime || ''}
-                  onChange={(e) => handleInputChange('details', 'readyTime', e.target.value)}
-                  className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
-                  placeholder="e.g., Tomorrow 9am, Dec 15 2pm"
-                />
-              </div>
-            </div>
-          )}
 
           {/* Details Section */}
           <div className="md:col-span-2 space-y-3">
@@ -430,6 +437,22 @@ export const ExtractionResult: React.FC<ExtractionResultProps> = ({
                     <option value="Step Deck">Step Deck</option>
                     <option value="Straight Truck">Straight Truck</option>
                   </select>
+
+                  {/* Show reefer temperature input when Reefer is selected */}
+                  {data.details.serviceType === 'Reefer' && (
+                    <div className="mt-3">
+                      <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1">
+                        <Thermometer className="w-3 h-3" /> Reefer Temperature
+                      </label>
+                      <input
+                        type="text"
+                        value={data.details.reeferTemperature || ''}
+                        onChange={(e) => handleInputChange('details', 'reeferTemperature', e.target.value)}
+                        className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                        placeholder="e.g., -10°F, 35-40°F"
+                      />
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1"><Package className="w-3 h-3"/> Total Weight (lbs)</label>
@@ -478,10 +501,25 @@ export const ExtractionResult: React.FC<ExtractionResultProps> = ({
                    </div>
                 </div>
 
+                {/* UN Number */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3"/> UN Number {data.details.isHazmat && <span className="text-red-500">*</span>}
+                  </label>
+                  <input
+                    type="text"
+                    value={data.details.unNumber || ''}
+                    onChange={(e) => handleInputChange('details', 'unNumber', e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none disabled:bg-slate-50 disabled:text-slate-400"
+                    placeholder={data.details.isHazmat ? "e.g., UN1203" : "Only if hazmat"}
+                    disabled={!data.details.isHazmat}
+                  />
+                </div>
+
                  <div>
                   <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1"><Calendar className="w-3 h-3"/> Appointments</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={data.details.appointments || ''}
                     onChange={(e) => handleInputChange('details', 'appointments', e.target.value)}
                     className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"

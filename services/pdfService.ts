@@ -3,31 +3,39 @@ import autoTable from 'jspdf-autotable';
 import { ShipmentData } from "../types";
 
 export const generateAndDownloadPDF = (data: ShipmentData) => {
-  const doc = new jsPDF();
+  const doc = new jsPDF({
+    unit: 'mm',
+    format: 'letter'
+  });
   const now = new Date();
   const date = now.toISOString().split('T')[0];
   const time = now.toTimeString().split(' ')[0];
 
-  // Title
-  doc.setFontSize(18);
-  doc.setTextColor(40, 40, 40);
-  doc.text("SHIPMENT REQUEST ORDER", 105, 20, { align: "center" });
-  
-  doc.setFontSize(10);
-  doc.setTextColor(100, 100, 100);
-  doc.text(`Generated: ${date} ${time}`, 105, 28, { align: "center" });
+  // Optimized margins and spacing
+  const margin = 12;
+  let finalY = 12;
 
-  let finalY = 35;
+  // Title
+  doc.setFontSize(16);
+  doc.setTextColor(40, 40, 40);
+  doc.text("SHIPMENT REQUEST ORDER", 105, finalY, { align: "center" });
+
+  doc.setFontSize(9);
+  doc.setTextColor(100, 100, 100);
+  doc.text(`Generated: ${date} ${time}`, 105, finalY + 6, { align: "center" });
+
+  finalY = 24;
 
   // Customer Name
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setTextColor(0, 0, 0);
-  doc.text(`Customer: ${data.customerName || "N/A"}`, 14, finalY);
-  finalY += 8;
+  doc.text(`Customer: ${data.customerName || "N/A"}`, margin, finalY);
+  finalY += 6;
 
   // Route Table
   autoTable(doc, {
     startY: finalY,
+    margin: { left: margin, right: margin },
     head: [['SHIPPER (PICKUP)', 'RECEIVER (DELIVERY)']],
     body: [
       [
@@ -36,45 +44,48 @@ export const generateAndDownloadPDF = (data: ShipmentData) => {
       ]
     ],
     theme: 'grid',
-    headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', lineWidth: 0.1, lineColor: [200, 200, 200] },
-    styles: { fontSize: 11, cellPadding: 6, lineColor: [200, 200, 200], lineWidth: 0.1 },
+    headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', fontSize: 9, lineWidth: 0.1, lineColor: [200, 200, 200] },
+    styles: { fontSize: 9, cellPadding: 3, lineColor: [200, 200, 200], lineWidth: 0.1 },
   });
 
-  // Get final Y from the previous table. jsPDF autoTable attaches `lastAutoTable` to doc.
-  finalY = (doc as any).lastAutoTable.finalY + 10;
+  finalY = (doc as any).lastAutoTable.finalY + 6;
 
   // Classification Title
-  doc.setFontSize(12);
+  doc.setFontSize(10);
   doc.setTextColor(0, 0, 0);
-  doc.text("CLASSIFICATION", 14, finalY);
-  finalY += 5;
+  doc.text("CLASSIFICATION", margin, finalY);
+  finalY += 4;
 
   // Classification Table
   autoTable(doc, {
     startY: finalY,
-    head: [['SHIPMENT TYPE', 'CROSS BORDER', 'TIMING', 'READY TIME']],
+    margin: { left: margin, right: margin },
+    head: [['SHIPMENT TYPE', 'RECEIVER TYPE', 'CROSS BORDER', 'TIMING', 'READY TIME']],
     body: [
       [
         data.details.shipmentType || "N/A",
+        data.details.receiverType || "N/A",
         data.details.crossBorderStatus || "N/A",
         data.details.shipmentTiming || "N/A",
         data.details.readyTime || "N/A"
       ]
     ],
     theme: 'grid',
-    headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', lineWidth: 0.1, lineColor: [200, 200, 200] },
-    styles: { fontSize: 9, cellPadding: 4, lineColor: [200, 200, 200], lineWidth: 0.1 },
+    headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', fontSize: 8, lineWidth: 0.1, lineColor: [200, 200, 200] },
+    styles: { fontSize: 8, cellPadding: 2.5, lineColor: [200, 200, 200], lineWidth: 0.1 },
   });
 
-  finalY = (doc as any).lastAutoTable.finalY + 10;
+  finalY = (doc as any).lastAutoTable.finalY + 6;
 
   // Commodity Details Title
-  doc.text("COMMODITY DETAILS", 14, finalY);
-  finalY += 5;
+  doc.setFontSize(10);
+  doc.text("COMMODITY DETAILS", margin, finalY);
+  finalY += 4;
 
   // Commodity Details Table
   autoTable(doc, {
     startY: finalY,
+    margin: { left: margin, right: margin },
     head: [['COMMODITY', 'EQUIPMENT TYPE', 'HAZMAT', 'UN NUMBER']],
     body: [
       [
@@ -85,38 +96,42 @@ export const generateAndDownloadPDF = (data: ShipmentData) => {
       ]
     ],
     theme: 'grid',
-    headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', lineWidth: 0.1, lineColor: [200, 200, 200] },
-    styles: { fontSize: 9, cellPadding: 4, lineColor: [200, 200, 200], lineWidth: 0.1 },
+    headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', fontSize: 8, lineWidth: 0.1, lineColor: [200, 200, 200] },
+    styles: { fontSize: 8, cellPadding: 2.5, lineColor: [200, 200, 200], lineWidth: 0.1 },
   });
 
-  finalY = (doc as any).lastAutoTable.finalY + 10;
+  finalY = (doc as any).lastAutoTable.finalY + 6;
 
   // Details Title
-  doc.text("SHIPMENT DETAILS", 14, finalY);
-  finalY += 5;
+  doc.setFontSize(10);
+  doc.text("SHIPMENT DETAILS", margin, finalY);
+  finalY += 4;
 
   // Details Table
   autoTable(doc, {
     startY: finalY,
-    head: [['SERVICE TYPE', 'TOTAL WEIGHT', 'REEFER REQ.', 'APPOINTMENTS']],
+    margin: { left: margin, right: margin },
+    head: [['SERVICE TYPE', 'TOTAL WEIGHT', 'REEFER REQ.', 'REEFER TEMP', 'APPOINTMENTS']],
     body: [
       [
         data.details.serviceType || "N/A",
         `${data.details.weightLbs} lbs`,
         data.details.isReeferRequired ? "YES" : "NO",
+        data.details.reeferTemperature || "N/A",
         data.details.appointments || "N/A"
       ]
     ],
     theme: 'grid',
-    headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', lineWidth: 0.1, lineColor: [200, 200, 200] },
-    styles: { fontSize: 9, cellPadding: 4, lineColor: [200, 200, 200], lineWidth: 0.1 },
+    headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', fontSize: 8, lineWidth: 0.1, lineColor: [200, 200, 200] },
+    styles: { fontSize: 8, cellPadding: 2.5, lineColor: [200, 200, 200], lineWidth: 0.1 },
   });
 
-  finalY = (doc as any).lastAutoTable.finalY + 10;
+  finalY = (doc as any).lastAutoTable.finalY + 6;
 
   // Dimensions Title
-  doc.text("DIMENSIONS", 14, finalY);
-  finalY += 5;
+  doc.setFontSize(10);
+  doc.text("DIMENSIONS", margin, finalY);
+  finalY += 4;
 
   // Prepare Dimension Rows (Fixed 5 rows)
   const dimRows = [];
@@ -132,24 +147,27 @@ export const generateAndDownloadPDF = (data: ShipmentData) => {
 
   autoTable(doc, {
     startY: finalY,
+    margin: { left: margin, right: margin },
     head: [['QTY', 'LENGTH', 'WIDTH', 'HEIGHT']],
     body: dimRows,
     theme: 'grid',
-    headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', lineWidth: 0.1, lineColor: [200, 200, 200] },
-    styles: { fontSize: 10, cellPadding: 3, lineColor: [200, 200, 200], lineWidth: 0.1 },
+    headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold', fontSize: 8, lineWidth: 0.1, lineColor: [200, 200, 200] },
+    styles: { fontSize: 8, cellPadding: 2, lineColor: [200, 200, 200], lineWidth: 0.1 },
   });
 
-  finalY = (doc as any).lastAutoTable.finalY + 10;
+  finalY = (doc as any).lastAutoTable.finalY + 6;
 
   // Notes Title
-  doc.text("ADDITIONAL NOTES", 14, finalY);
-  finalY += 5;
+  doc.setFontSize(10);
+  doc.text("ADDITIONAL NOTES", margin, finalY);
+  finalY += 4;
 
   autoTable(doc, {
     startY: finalY,
+    margin: { left: margin, right: margin },
     body: [[data.details.additionalNotes || "N/A"]],
     theme: 'grid',
-    styles: { fontSize: 10, cellPadding: 6, lineColor: [200, 200, 200], lineWidth: 0.1 },
+    styles: { fontSize: 9, cellPadding: 3, lineColor: [200, 200, 200], lineWidth: 0.1 },
   });
 
   // Save

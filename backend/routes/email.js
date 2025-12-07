@@ -7,6 +7,23 @@ import nodemailer from 'nodemailer';
 
 const router = express.Router();
 
+// @route   GET /api/email/default-pricing
+// @desc    Get default pricing email from environment
+// @access  Private
+router.get('/default-pricing', protect, async (req, res) => {
+  try {
+    const defaultEmail = process.env.PRICING_EMAIL || '';
+    res.json({
+      email: defaultEmail,
+    });
+  } catch (error) {
+    console.error('Get default email error:', error);
+    res.status(500).json({
+      message: 'Failed to get default pricing email',
+    });
+  }
+});
+
 // @route   GET /api/email/test
 // @desc    Test email configuration
 // @access  Private
