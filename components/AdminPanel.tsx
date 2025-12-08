@@ -182,13 +182,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
         appointments: submission.details.appointments || '',
         additionalNotes: submission.details.additionalNotes || '',
         serviceType: submission.details.serviceType as ShipmentData['details']['serviceType'],
-        shipmentType: (submission.details.shipmentType as ShipmentData['details']['shipmentType']) || 'Business to Business',
+        shipmentType: (submission.details.shipmentType as ShipmentData['details']['shipmentType']) || 'Business',
+        receiverType: (submission.details.receiverType as ShipmentData['details']['receiverType']) || 'Business',
         crossBorderStatus: (submission.details.crossBorderStatus as ShipmentData['details']['crossBorderStatus']) || 'Interstate',
         commodity: submission.details.commodity || '',
         unNumber: submission.details.unNumber || '',
-        equipmentType: submission.details.equipmentType || '',
+        equipmentType: (submission.details.equipmentType as ShipmentData['details']['equipmentType']) || 'Dry Van',
         shipmentTiming: (submission.details.shipmentTiming as ShipmentData['details']['shipmentTiming']) || 'Ready Now',
         readyTime: submission.details.readyTime || '',
+        reeferTemperature: submission.details.reeferTemperature || '',
       },
     };
   };

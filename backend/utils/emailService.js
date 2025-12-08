@@ -105,8 +105,24 @@ export const sendEmailWithPDF = async (toEmail, pdfBuffer, options) => {
     console.error('Email sending error:', error);
     
     // Provide more helpful error messages
+    const host = process.env.SMTP_HOST || 'unknown';
+    
+    if (error.code === 'EDNS' || error.code === 'ENOTFOUND') {
+      // DNS resolution failed - hostname doesn't exist or isn't accessible
+      throw new Error(
+        `Cannot connect to mail server: DNS lookup failed for "${host}".\n\n` +
+        'Please check your .env file and verify:\n' +
+        '1. SMTP_HOST is a valid mail server hostname\n' +
+        '2. Common providers:\n' +
+        '   - Gmail: smtp.gmail.com\n' +
+        '   - Outlook/Office365: smtp.office365.com\n' +
+        '   - Yahoo: smtp.mail.yahoo.com\n' +
+        '3. If using a custom mail server, ensure it\'s accessible from your network\n' +
+        `\nCurrent SMTP_HOST: ${host}`
+      );
+    }
+    
     if (error.code === 'EAUTH') {
-      const host = process.env.SMTP_HOST || 'unknown';
       const isOutlook = host.includes('office365') || host.includes('outlook');
       const isGmail = host.includes('gmail');
       
@@ -140,6 +156,30 @@ export const sendEmailWithPDF = async (toEmail, pdfBuffer, options) => {
       }
       
       throw new Error(troubleshooting);
+    }
+    
+    if (error.code === 'ECONNREFUSED') {
+      throw new Error(
+        `Cannot connect to mail server: Connection refused to ${host}.\n\n` +
+        'Please check:\n' +
+        '1. SMTP_HOST is correct\n' +
+        '2. SMTP_PORT is correct (587 for TLS, 465 for SSL)\n' +
+        '3. Your firewall isn\'t blocking the connection\n' +
+        `\nCurrent configuration:\n` +
+        `SMTP_HOST: ${host}\n` +
+        `SMTP_PORT: ${process.env.SMTP_PORT || '587'}`
+      );
+    }
+    
+    if (error.code === 'ETIMEDOUT') {
+      throw new Error(
+        `Connection to mail server timed out: ${host}.\n\n` +
+        'Please check:\n' +
+        '1. Your internet connection\n' +
+        '2. The mail server is accessible from your network\n' +
+        '3. No firewall is blocking outbound SMTP connections\n' +
+        `\nCurrent SMTP_HOST: ${host}`
+      );
     }
     
     throw new Error(`Failed to send email: ${error.message}`);

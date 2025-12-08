@@ -11,11 +11,13 @@ export interface Dimension {
   height: string;
 }
 
-export type ServiceType = 'FTL' | 'LTL' | 'Intermodal' | 'Flatbed' | 'Dry Van' | 'Reefer' | 'Step Deck' | 'Straight Truck';
+export type ServiceType = 'FTL' | 'LTL';
 
-export type ShipmentType = 'Business to Business' | 'Business to Residential';
+export type EquipmentType = 'Intermodal' | 'Flatbed' | 'Dry Van' | 'Reefer' | 'Step Deck' | 'Straight Truck';
 
-export type ReceiverType = 'Business to Business' | 'Business to Residential';
+export type ShipmentType = 'Business' | 'Residential';
+
+export type ReceiverType = 'Business' | 'Residential';
 
 export type CrossBorderStatus = 'Cross Border' | 'Domestic' | 'Interstate';
 
@@ -37,7 +39,7 @@ export interface ShipmentDetails {
   crossBorderStatus: CrossBorderStatus;
   commodity: string;
   unNumber: string;
-  equipmentType: string;
+  equipmentType: EquipmentType;
   shipmentTiming: ShipmentTiming;
   readyTime: string;
   reeferTemperature: string;

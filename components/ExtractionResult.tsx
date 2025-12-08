@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShipmentData, Dimension, ServiceType, ShipmentType, ReceiverType, CrossBorderStatus, ShipmentTiming } from '../types';
+import { ShipmentData, Dimension, ServiceType, EquipmentType, ShipmentType, ReceiverType, CrossBorderStatus, ShipmentTiming } from '../types';
 import { FileText, Pencil, Truck, MapPin, Package, AlertTriangle, Thermometer, Calendar, Clipboard, FileSpreadsheet, FileIcon, User, Mail, Send, Building2, Globe2, Box, Clock } from 'lucide-react';
 
 interface ExtractionResultProps {
@@ -95,6 +95,16 @@ export const ExtractionResult: React.FC<ExtractionResultProps> = ({
       details: {
         ...data.details,
         shipmentTiming: value
+      }
+    });
+  };
+
+  const handleEquipmentTypeChange = (value: EquipmentType) => {
+    onUpdate({
+      ...data,
+      details: {
+        ...data.details,
+        equipmentType: value
       }
     });
   };
@@ -308,29 +318,29 @@ export const ExtractionResult: React.FC<ExtractionResultProps> = ({
               <Building2 className="w-3.5 h-3.5" /> Shipment Classification
             </h3>
             <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Shipment Type */}
+              {/* Shipper */}
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-2">Shipment Type</label>
+                <label className="block text-xs font-semibold text-slate-500 mb-2">Shipper</label>
                 <select
-                  value={data.details.shipmentType || 'Business to Business'}
+                  value={data.details.shipmentType || 'Business'}
                   onChange={(e) => handleShipmentTypeChange(e.target.value as ShipmentType)}
                   className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
                 >
-                  <option value="Business to Business">Business to Business</option>
-                  <option value="Business to Residential">Business to Residential</option>
+                  <option value="Business">Business</option>
+                  <option value="Residential">Residential</option>
                 </select>
               </div>
 
-              {/* Receiver Type */}
+              {/* Receiver */}
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-2">Receiver Type</label>
+                <label className="block text-xs font-semibold text-slate-500 mb-2">Receiver</label>
                 <select
-                  value={data.details.receiverType || 'Business to Business'}
+                  value={data.details.receiverType || 'Business'}
                   onChange={(e) => handleReceiverTypeChange(e.target.value as ReceiverType)}
                   className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
                 >
-                  <option value="Business to Business">Business to Business</option>
-                  <option value="Business to Residential">Business to Residential</option>
+                  <option value="Business">Business</option>
+                  <option value="Residential">Residential</option>
                 </select>
               </div>
 
@@ -401,13 +411,34 @@ export const ExtractionResult: React.FC<ExtractionResultProps> = ({
               {/* Equipment Type */}
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-2">Equipment Type</label>
-                <input
-                  type="text"
-                  value={data.details.equipmentType || ''}
-                  onChange={(e) => handleInputChange('details', 'equipmentType', e.target.value)}
+                <select
+                  value={data.details.equipmentType || 'Dry Van'}
+                  onChange={(e) => handleEquipmentTypeChange(e.target.value as EquipmentType)}
                   className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
-                  placeholder="e.g., Liftgate required"
-                />
+                >
+                  <option value="Intermodal">Intermodal</option>
+                  <option value="Flatbed">Flatbed</option>
+                  <option value="Dry Van">Dry Van</option>
+                  <option value="Reefer">Reefer</option>
+                  <option value="Step Deck">Step Deck</option>
+                  <option value="Straight Truck">Straight Truck</option>
+                </select>
+
+                {/* Show reefer temperature input when Reefer is selected */}
+                {data.details.equipmentType === 'Reefer' && (
+                  <div className="mt-3">
+                    <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1">
+                      <Thermometer className="w-3 h-3" /> Reefer Temperature
+                    </label>
+                    <input
+                      type="text"
+                      value={data.details.reeferTemperature || ''}
+                      onChange={(e) => handleInputChange('details', 'reeferTemperature', e.target.value)}
+                      className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                      placeholder="e.g., -10°F, 35-40°F"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -430,29 +461,7 @@ export const ExtractionResult: React.FC<ExtractionResultProps> = ({
                   >
                     <option value="FTL">FTL</option>
                     <option value="LTL">LTL</option>
-                    <option value="Intermodal">Intermodal</option>
-                    <option value="Flatbed">Flatbed</option>
-                    <option value="Dry Van">Dry Van</option>
-                    <option value="Reefer">Reefer</option>
-                    <option value="Step Deck">Step Deck</option>
-                    <option value="Straight Truck">Straight Truck</option>
                   </select>
-
-                  {/* Show reefer temperature input when Reefer is selected */}
-                  {data.details.serviceType === 'Reefer' && (
-                    <div className="mt-3">
-                      <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1">
-                        <Thermometer className="w-3 h-3" /> Reefer Temperature
-                      </label>
-                      <input
-                        type="text"
-                        value={data.details.reeferTemperature || ''}
-                        onChange={(e) => handleInputChange('details', 'reeferTemperature', e.target.value)}
-                        className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-slate-900 font-medium focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
-                        placeholder="e.g., -10°F, 35-40°F"
-                      />
-                    </div>
-                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1"><Package className="w-3 h-3"/> Total Weight (lbs)</label>
