@@ -28,8 +28,26 @@ router.post(
         return res.status(400).json({ message: errors.array()[0].msg });
       }
 
+      // Transform enum values to match schema expectations
+      const transformedDetails = { ...req.body.details };
+      
+      // Transform shipmentType
+      if (transformedDetails.shipmentType === 'Business') {
+        transformedDetails.shipmentType = 'Business to Business';
+      } else if (transformedDetails.shipmentType === 'Residential') {
+        transformedDetails.shipmentType = 'Business to Residential';
+      }
+      
+      // Transform receiverType
+      if (transformedDetails.receiverType === 'Business') {
+        transformedDetails.receiverType = 'Business to Business';
+      } else if (transformedDetails.receiverType === 'Residential') {
+        transformedDetails.receiverType = 'Business to Residential';
+      }
+
       const submissionData = {
         ...req.body,
+        details: transformedDetails,
         user: req.user._id,
       };
 
